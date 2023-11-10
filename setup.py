@@ -61,11 +61,13 @@ setup(
 
         'sentencepiece', # needed llama2 tokenizer
 
-        # 'trl',
-        # 'peft',
+        'accelerate',
 
-        # 'bitsandbytes',
-        # 'einops',
+        'trl',
+        'peft',
+
+        'bitsandbytes',
+        'einops',
     ]
 )
 

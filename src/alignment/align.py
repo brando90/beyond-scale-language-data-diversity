@@ -463,7 +463,7 @@ if __name__ == '__main__':
     # get_tokenized_dataset_to_work_with_pytorch_dataloader_by_removing_columns_without_tenosr()
     # demo_how_to_use_collate_fn_with_pytorch_dataloader()
     # demo_finetuning_gpt2_with_collate_passed_to_trainer_on_af_dataset()
-    algin_test_cross_div()
-    # sanity2_af_is_aligned_to_af()
+    # algin_test_cross_div()
+    sanity2_af_is_aligned_to_af()
     # -- End tests, report how long it took
     print(f'Time it took: {time.time() - time_start} seconds \a\n')
