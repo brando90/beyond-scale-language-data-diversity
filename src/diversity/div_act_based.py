@@ -75,6 +75,7 @@ def generate_semi_random_tokens_limited_vocab(tokenizer: GPT2Tokenizer,
     """
     # Define a subset range of the tokenizer's vocabulary
     vocab_subset_range = int(tokenizer.vocab_size * percentange_vocab)  # For example, 10% of the total vocab size
+    assert vocab_subset_range != 0, "The vocabulary subset range is 0!"
 
     # Generate batch of token sequences with tokens randomly selected from the subset range
     batch_random_tokens = [[random.randint(0, vocab_subset_range - 1) for _ in range(sequence_length)] for _ in range(batch_size)]
@@ -222,13 +223,16 @@ def main3_percent_vs_avg_dist():
     # Load the GPT-2 model and tokenizer
     model = GPT2Model.from_pretrained('gpt2').to(device)
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    print(f'{tokenizer.vocab_size=}')
 
-    percentages = np.linspace(0.05, 1.0, 30)  # Range of percentages from 0.05 to 1.0
+    percentages = np.linspace(1.0/tokenizer.vocab_size, 1.0, 30)  # Range of percentages from 0.05 to 1.0
+    # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.02, 60)  # Range of percentages from 0.05 to 1.0
+    # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.001, 60)  # Range of percentages from 0.05 to 1.0
     avg_distances = []
     ci_values = []
 
     with torch.no_grad():
-        for percentage in tqdm(percentages):
+        for i, percentage in tqdm(enumerate(percentages)):
             print(f'{i=} percentage = {percentage}')
             torch.cuda.empty_cache()
             random_tokens1 = generate_semi_random_tokens_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
@@ -238,8 +242,10 @@ def main3_percent_vs_avg_dist():
 
             activations1 = activations1.view(-1, activations1.size(-1))
             activations2 = activations2.view(-1, activations2.size(-1))
+            print(f'{activations1.shape=} {activations2.shape=}')
 
             dist = svcca_distance(activations1, activations2)
+            # dist, _ = temporal_cca(activations1, activations2)
             dist_values = dist.view(-1).cpu().numpy()
 
             mean_dist = np.mean(dist_values)
@@ -254,7 +260,8 @@ def main3_percent_vs_avg_dist():
 
     # Plotting the results with 95% CI
     plt.figure(figsize=(10, 6))
-    plt.errorbar(percentages, avg_distances, yerr=ci_values, fmt='o', ecolor='lightgray', capsize=5)
+    # plt.plot(percentages, avg_distances, marker='o')
+    plt.errorbar(percentages, avg_distances, yerr=ci_values, fmt='-o', ecolor='lightgray', capsize=5)
     plt.xlabel('Percentage of Vocabulary Used')
     plt.ylabel('Average CCA Distance')
     plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
@@ -270,4 +277,4 @@ if __name__ == '__main__':
     # main2_percent_vs_avg_dist()
     main3_percent_vs_avg_dist()
     # print secs, mins, hours elapste one line
-    print(f'Done!\a Time elapsed: {(time.time() - start):.2f}secs {((time.time() - start)/60):.2f}mins {((time.time() - start)/60/60):.2f}hours')
+    print(f'Done!\a Time elapsed: {(time.time() - start):.2f}secs {((time.time() - start)/60):.2f}mins {((time.time() - start)/60/60):.2f}hours\a\a')
