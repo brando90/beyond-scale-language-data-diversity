@@ -211,10 +211,63 @@ def main2_percent_vs_avg_dist():
     # save plot as .png file to ~/beyond-scale-language-data-diversity
     plt.savefig(os.path.expanduser('~/beyond-scale-language-data-diversity/avg_cca_dist_vs_vocab_usage.png'))
 
+def main3_percent_vs_avg_dist():
+    """
+    Main function to plot the relationship between percentage of vocabulary used in token generation
+    and the average CCA distance between two sets of activations from a GPT-2 model,
+    including 95% confidence intervals.
+    """
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Load the GPT-2 model and tokenizer
+    model = GPT2Model.from_pretrained('gpt2').to(device)
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+
+    percentages = np.linspace(0.05, 1.0, 30)  # Range of percentages from 0.05 to 1.0
+    avg_distances = []
+    ci_values = []
+
+    with torch.no_grad():
+        for percentage in tqdm(percentages):
+            print(f'{i=} percentage = {percentage}')
+            torch.cuda.empty_cache()
+            random_tokens1 = generate_semi_random_tokens_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            random_tokens2 = generate_semi_random_tokens_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            activations1 = model(random_tokens1)[0]
+            activations2 = model(random_tokens2)[0]
+
+            activations1 = activations1.view(-1, activations1.size(-1))
+            activations2 = activations2.view(-1, activations2.size(-1))
+
+            dist = svcca_distance(activations1, activations2)
+            dist_values = dist.view(-1).cpu().numpy()
+
+            mean_dist = np.mean(dist_values)
+            std_dist = np.std(dist_values)
+            n_samples = len(dist_values)
+            ci = 1.96 * (std_dist / np.sqrt(n_samples))
+            div = mean_dist
+            print(f'{div=} +- {ci}')
+
+            avg_distances.append(mean_dist)
+            ci_values.append(ci)
+
+    # Plotting the results with 95% CI
+    plt.figure(figsize=(10, 6))
+    plt.errorbar(percentages, avg_distances, yerr=ci_values, fmt='o', ecolor='lightgray', capsize=5)
+    plt.xlabel('Percentage of Vocabulary Used')
+    plt.ylabel('Average CCA Distance')
+    plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
+    plt.grid(True)
+    plt.show()
+    plt.savefig(os.path.expanduser('~/beyond-scale-language-data-diversity/avg_cca_dist_vs_vocab_usage_with_ci.png'))
+
+
 if __name__ == '__main__':
     import time
     start = time.time()
     # main()
-    main2_percent_vs_avg_dist()
+    # main2_percent_vs_avg_dist()
+    main3_percent_vs_avg_dist()
     # print secs, mins, hours elapste one line
     print(f'Done!\a Time elapsed: {(time.time() - start):.2f}secs {((time.time() - start)/60):.2f}mins {((time.time() - start)/60/60):.2f}hours')
