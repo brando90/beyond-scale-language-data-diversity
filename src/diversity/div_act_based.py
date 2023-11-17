@@ -11,6 +11,7 @@ echo CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES
 ref: acts debate/conv: https://chat.openai.com/c/9aae0b31-689e-415c-ba40-73a790bb2e0d
 ref: general acts code: https://chat.openai.com/g/g-KV0CvoH8Y-python-excellent-comments-doc-strings-types/c/d50783d2-f958-49d6-a729-2bc6cf28deb7
 """
+from datasets import load_dataset
 from transformers import GPT2Model, GPT2Tokenizer
 import torch
 import random
@@ -26,6 +27,26 @@ from anatome.similarity import pwcca_distance_choose_best_layer_matrix, svcca_di
     #                      'svcca': partial(svcca_distance, accept_rate=0.99, backend='svd'),
     #                      'lincka': partial(linear_cka_distance, reduce_bias=False),
     #                      "opd": orthogonal_procrustes_distance}
+
+# Function to set all seeds for reproducibility
+def set_random_seeds(seed_value=42):
+    """
+    This function sets the seed for randomness for reproducible results.
+    
+    Args:
+    - seed_value (int): The value of the seed to be used for all libraries.
+    """
+    random.seed(seed_value)  # Python's built-in random library
+    np.random.seed(seed_value)  # NumPy library
+    torch.manual_seed(seed_value)  # PyTorch library
+
+    # If you are using CuDNN backend
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+
+    # If running on the GPU, also set the seed there
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed_value)
 
 def generate_same_token_sequence(token_value: int, 
                                 sequence_length: int = 50, 
@@ -269,12 +290,76 @@ def main3_percent_vs_avg_dist():
     plt.show()
     plt.savefig(os.path.expanduser('~/beyond-scale-language-data-diversity/avg_cca_dist_vs_vocab_usage_with_ci.png'))
 
+def main4_real_hf_dataset():
+    """
+    Main function to load the GPT-2 model, generate random tokens, and compute activations.
+    """
+    # set random seed
+    set_random_seeds()
+
+    # Determine if CUDA (GPU support) is available and set the device accordingly
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Load the GPT-2 model and tokenizer
+    model = GPT2Model.from_pretrained('gpt2')
+    model.to(device)
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    # print(f'{tokenizer.model_max_length=}')
+
+    # Set the padding token in tokenizer to the EOS token
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    # Generate a sequence of tokens from HF dataset
+    dataset = load_dataset("c4", "en", split="train", streaming=True)
+    # Preprocess the texts: encode them to input IDs (tokens)
+    batch_size: int = 300
+    # texts1: list[str] = [dataset[i]['text'] for i in range(batch_size)]  # Example: get batch_size texts from C4
+    # texts2: list[str] = [dataset[i]['text'] for i in range(batch_size)]  # Example: get batch_size texts from C4
+    # Get two batches of data from the dataset stream
+    texts1 = list(dataset.take(2*batch_size))
+    texts2 = texts1[batch_size:]
+    texts1 = [example['text'] for example in texts1]
+    texts2 = [example['text'] for example in texts2]
+    # encodings = tokenizer(texts, return_tensors='pt', padding=True, truncation=True, max_length=model.config.n_positions)
+    encodings1 = tokenizer(texts1, return_tensors='pt', padding=True, truncation=True, max_length=50)
+    encodings2 = tokenizer(texts2, return_tensors='pt', padding=True, truncation=True, max_length=50)
+    input_ids1 = encodings1['input_ids'].to(device)
+    input_ids2 = encodings2['input_ids'].to(device)
+    assert input_ids1.sum().item() != input_ids2.sum().item(), "Two  sequences of tokens are the same!"
+    print(f'{input_ids1.shape=}')
+    print(f'{input_ids2.shape=}')
+
+    # Compute the activations from the model
+    activations1 = model(input_ids1)
+    activations2 = model(input_ids2)
+    # Extract the activations tensor
+    activations1 = activations1[0]
+    activations2 = activations2[0]
+    # Reshape the activations tensor to the shape [B, T*D]
+    # activations1 = activations1.view(activations1.size(0), -1)
+    # activations2 = activations2.view(activations2.size(0), -1)
+    # Reshape the activations tensor to the shape [B*T, D]
+    activations1 = activations1.view(-1, activations1.size(-1))
+    activations2 = activations2.view(-1, activations2.size(-1))
+
+    # Print the shape of the activations tensor
+    print(f"Shape of activations tensor: {activations1.shape}")
+    print(f"Shape of activations tensor: {activations2.shape}")
+    print(f'{activations1.sum()=}')
+    print(f'{activations2.sum()=}')
+
+    dist: torch.Tensor = svcca_distance(activations1, activations2)
+    # dist: torch.Tensor = pwcca_distance_choose_best_layer_matrix(activations, activations, backend='svd', epsilon=1e-10)
+    # dist, dists = temporal_cca(activations1, activations2)
+    print(f'{dist=}')
 
 if __name__ == '__main__':
     import time
     start = time.time()
     # main()
     # main2_percent_vs_avg_dist()
-    main3_percent_vs_avg_dist()
+    # main3_percent_vs_avg_dist()
+    main4_real_hf_dataset()
     # print secs, mins, hours elapste one line
     print(f'Done!\a Time elapsed: {(time.time() - start):.2f}secs {((time.time() - start)/60):.2f}mins {((time.time() - start)/60/60):.2f}hours\a\a')
