@@ -6,7 +6,7 @@ def main_reinit_model():
     """
     ref: https://stackoverflow.com/questions/76971761/how-to-adapt-llama-v2-model-to-less-than-7b-parameters
     ref: https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/modeling_llama.py#L721
-    
+    ref: https://chat.openai.com/c/977d0cb0-b819-48ac-be5c-6e482ad5e518 
     """
     print('Starting to reinitialize the model...')
     # Load the pretrained LLaMA v2 config
