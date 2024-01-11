@@ -54,3 +54,7 @@ Thoughts/tips:
 ##
 
 TODO: display equations in markdown https://chat.openai.com/c/f43e625b-dbd6-4ecc-93f6-d00f9aa10af6 
+
+### References
+
+Overleaf: https://www.overleaf.com/read/wbfqfshkcgbq#4b2dc1
