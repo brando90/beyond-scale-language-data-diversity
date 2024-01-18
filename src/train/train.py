@@ -53,7 +53,7 @@ def train():
     buffer_size = 500_000
     probabilities = []
     data_mixture_name = None
-    streaming = False
+    streaming = True
     data_files = [None]
     seed = 0
     split = 'train'
@@ -73,17 +73,18 @@ def train():
 
     # - Online (real experiment)
     # mode = 'online'; seed = random.randint(0, 2**32 - 1)
-    mode = 'online'; seed = 0; report_to = 'wandb'
+    # mode = 'online'; seed = 0; report_to = 'wandb'
 
     # - c4 wt single
     path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
+    path, name, data_files, split = ['c4'], ['en'], [None], ['train']
     # path, name, data_files, split = ['suolyer/pile_pile-cc'] + ['parquet'] * 4, [None] + ['hacker_news', 'nih_exporter', 'pubmed', 'uspto'], [None] + [urls_hacker_news, urls_nih_exporter, urls_pubmed, urls_uspto], ['validation'] + ['train'] * 4
     # pretrained_model_name_or_path = 'gpt2'
     pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-chat-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-13b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-70b-hf'
-    pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
+    # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
     # - important training details or it wont run, mem issues maybe
     num_epochs = 1
     # num_epochs = 2

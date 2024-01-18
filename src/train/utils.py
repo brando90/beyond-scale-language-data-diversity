@@ -17,13 +17,18 @@ from datasets import load_dataset, interleave_datasets
 from transformers import PreTrainedTokenizer, AutoTokenizer, Trainer, TrainingArguments, AutoConfig
 from transformers.testing_utils import CaptureLogger
 
-def get_column_names(dataset, spit: str = 'train', method: str = 'features', streaming: bool = True):
+def get_column_names(dataset, 
+                    #   split: str = 'train',
+                      method: str = 'features', 
+                      streaming: bool = True,
+                      ):
     if method == 'features':
-        column_names = list(dataset[spit].features)
+        # column_names = list(dataset[spit].features)
+        column_names = list(dataset.features)
     elif method == 'keys':
-        # batch = get_data_from_hf_dataset(dataset, streaming=streaming, batch_size=1)
-        # column_names = next(iter(batch)).keys()
-        column_names = next(iter(dataset)).keys()
+        batch = get_data_from_hf_dataset(dataset, streaming=streaming, batch_size=1)
+        column_names = next(iter(batch)).keys()
+        # column_names = next(iter(dataset)).keys()
     else:
         raise ValueError(f"method {method} not supported")
     return column_names
@@ -38,7 +43,6 @@ def get_data_from_hf_dataset(dataset,
     """ Gets data from a HF dataset, it's usually an iterator object e.g., some ds.map(fn, batched=True, remove_columns=remove_columns) has been applied. 
     Handles both streaming and non-streaming datasets, take for streaming and select for non-streaming.
     """
-    dataset = dataset.shuffle(buffer_size=buffer_size, seed=seed) if shuffle else dataset
     # sample_data = dataset.select(range(batch_size)) if not isinstance(dataset, datasets.iterable_dataset.IterableDataset) else dataset.take(batch_size)
     batch = dataset.take(batch_size) if streaming else dataset.select(random.sample(list(range(len(dataset))), batch_size))
     return batch
@@ -77,7 +81,9 @@ def preprocess(examples, tokenizer, max_length: int = 1024):
     return tokenizer(examples["text"], padding="max_length", max_length=max_length, truncation=True, return_tensors="pt")
     # return tokenizer(examples["text"], padding="max_length", max_length=model.config.context_length, truncation=True, return_tensors="pt")
 
-def group_texts(examples, block_size: int = 4096):
+def group_texts(examples, 
+                block_size: int,  # 4096, 1024
+                ):
     """
     tokenizer = ...obtained from your model... 
     tokenize_function = lambda examples: tokenize_function(examples, tokenizer=tokenizer) 
@@ -167,7 +173,7 @@ def _test_all_batches_are_size_block_size():
     # load c4 data set hf in streaming mode 
     from datasets import load_dataset
     streaming = True
-    raw_datasets = load_dataset("c4", "en", streaming=streaming).with_format("torch")
+    raw_datasets = load_dataset("c4", "en", streaming=streaming, split="train")
     get_data_from_hf_dataset(raw_datasets, streaming=streaming, batch_size=batch_size) 
     remove_columns = get_column_names(raw_datasets)  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
 
@@ -178,8 +184,9 @@ def _test_all_batches_are_size_block_size():
         remove_columns=remove_columns,
     )
     get_data_from_hf_dataset(tokenized_datasets, streaming=streaming, batch_size=batch_size)
+    _group_texts = lambda examples : group_texts(examples, block_size=tokenizer.model_max_length)
     lm_datasets = tokenized_datasets.map(
-        group_texts,
+        _group_texts,
         batched=True,  # Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
     )
     get_data_from_hf_dataset(lm_datasets, streaming=streaming, batch_size=batch_size)
@@ -187,6 +194,10 @@ def _test_all_batches_are_size_block_size():
     # get batch
     batch = get_data_from_hf_dataset(lm_datasets, streaming=streaming, batch_size=batch_size)
     print(batch)
+    for data_dict in iter(batch):
+        seq = data_dict['input_ids']
+        print(len(seq))
+    print()
 
 if __name__ == "__main__":
     from time import time
