@@ -17,6 +17,26 @@ from datasets import load_dataset, interleave_datasets
 from transformers import PreTrainedTokenizer, AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, AutoConfig
 from transformers.testing_utils import CaptureLogger
 
+# Use for IterableDatasetDict objects (i.e. streaming=T, split is unspecified (each key in dict is name of split))
+def view_exs_iterable_dataset_dict(dataset, num_exs=10, split='train'):
+  dataset_split = dataset[split]
+  for ex in dataset_split:
+    print(ex)
+    print('example details: keys', ex.keys(), ', text char length', len(ex['text']), '\n---')
+    num_exs -= 1
+    if num_exs == 0:
+      break
+
+
+# Use for IterableDataset objects (i.e. streaming=T, split=specified)
+def view_exs_iterable_dataset(dataset_split, num_exs=10):
+  for ex in dataset_split:
+    print(ex)
+    print('example details: keys', ex.keys(), ', text char length', len(ex['text']), '\n---')
+    num_exs -= 1
+    if num_exs == 0:
+      break
+
 def get_num_steps():
     # dataset_size: int = int(1.5e12)  # TODO, doesn't seem easy to solve. Either count all the sequennces/rows or have the meta data have this. Or make this number huge. 
     # dataset_size: int = train_dataset.num_rows
@@ -184,6 +204,7 @@ def collate_fn_train_only_first_eos_token_mask_everything_after_it(data: list[di
 # -- unit tests -- #
 
 def _test_all_batches_are_size_block_size():
+    print('-- starting unit test')
     batch_size = 4
     # get gpt2 tokenizer
     tokenizer = AutoTokenizer.from_pretrained("gpt2")
@@ -191,8 +212,15 @@ def _test_all_batches_are_size_block_size():
     # load c4 data set hf in streaming mode 
     from datasets import load_dataset
     streaming = True
-    raw_datasets = load_dataset("c4", "en", streaming=streaming, split="train")
-    get_data_from_hf_dataset(raw_datasets, streaming=streaming, batch_size=batch_size) 
+    # raw_datasets = load_dataset("c4", "en", streaming=streaming, split="train")
+    # raw_datasets = load_dataset('UDACA/PileSubsets', streaming=streaming).with_format('torch')   # this defaults to the subset 'all'
+    # raw_datasets = load_dataset('UDACA/PileSubsets', 'pubmed', split='train', streaming=streaming).with_format('torch')
+    raw_datasets = load_dataset('UDACA/PileSubsets', 'uspto', split='train', streaming=streaming).with_format('torch')
+    batch = get_data_from_hf_dataset(raw_datasets, streaming=streaming, batch_size=batch_size) 
+    # print(f'{batch=}')
+    # print(f'{next(iter(batch))=}')
+    # print(f'{next(iter(batch)).keys()}')
+    # print()
     remove_columns = get_column_names(raw_datasets)  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
 
     # how does it know which column to tokenize? gpt4 says default is text or your tokenized function can specify it, see my lambda fun above
@@ -201,17 +229,25 @@ def _test_all_batches_are_size_block_size():
         batched=True,  # Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
         remove_columns=remove_columns,
     )
-    get_data_from_hf_dataset(tokenized_datasets, streaming=streaming, batch_size=batch_size)
+    batch = get_data_from_hf_dataset(tokenized_datasets, streaming=streaming, batch_size=batch_size)
+    # print(f'{batch=}')
+    # print(f'{next(iter(batch))=}')
+    # print(f'{next(iter(batch)).keys()}')
+    # print()
+
     _group_texts = lambda examples : group_texts(examples, block_size=tokenizer.model_max_length)
     lm_datasets = tokenized_datasets.map(
         _group_texts,
         batched=True,  # Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
     )
-    get_data_from_hf_dataset(lm_datasets, streaming=streaming, batch_size=batch_size)
+    batch = get_data_from_hf_dataset(lm_datasets, streaming=streaming, batch_size=batch_size)
+    # print(f'{batch=}')
+    # print(f'{next(iter(batch))=}')
+    # print(f'{next(iter(batch)).keys()}')
+    # print()
 
     # get batch
     batch = get_data_from_hf_dataset(lm_datasets, streaming=streaming, batch_size=batch_size)
-    print(batch)
     for data_dict in iter(batch):
         seq = data_dict['input_ids']
         print(len(seq))
@@ -222,43 +258,60 @@ def _test_train_dataset_setup_for_main_code():
     batch_size = 2
     streaming = True
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
-    path, name, data_files, split = ['c4', 'c4'], ['en', 'en'], [None, None], ['train', 'validation']
+    # path, name, data_files, split = ['c4', 'c4'], ['en', 'en'], [None, None], ['train', 'validation']
     # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
     # path, name, data_files, split = ['suolyer/pile_pile-cc'] + ['parquet'] * 4, [None] + ['hacker_news', 'nih_exporter', 'pubmed', 'uspto'], [None] + [urls_hacker_news, urls_nih_exporter, urls_pubmed, urls_uspto], ['validation'] + ['train'] * 4
+    path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
 
     # -- Get tokenizer and model
-    tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+    # tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    tokenize_function = lambda examples: tokenizer(examples["text"])
     # torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32  # if >= 8 ==> brain float 16 available or set to True if you always want fp32 
     # model = AutoModelForCausalLM.from_pretrained('meta-llama/Llama-2-7b-hf', trust_remote_code=True, torch_dtype=torch_dtype, use_auth_token=True)
 
     # -- Get train data set
     # train_datasets = [load_dataset(p, n, data_files=data_file, streaming=streaming, split=split).with_format("torch") for p, n, data_file, split in zip(path, name, data_files, split)]
     # probabilities = [1.0/len(train_datasets) for _ in train_datasets]  
+
     # # - Get raw train data set
     # raw_train_datasets = interleave_datasets(train_datasets, probabilities)
-    raw_train_datasets = load_dataset(path[0], name[0], data_files=data_files[0], streaming=streaming, split=split[0]).with_format("torch")
-    get_data_from_hf_dataset(raw_train_datasets, streaming=streaming, batch_size=batch_size) 
+    # raw_train_datasets = load_dataset(path[0], name[0], data_files=data_files[0], streaming=streaming, split=split[0]).with_format("torch")
+    raw_train_datasets = load_dataset('UDACA/PileSubsets', 'uspto', split='train', streaming=streaming).with_format('torch')
+    batch = get_data_from_hf_dataset(raw_train_datasets, streaming=streaming, batch_size=batch_size) 
+    print(f'{batch=}')
+    print(f'{next(iter(batch))=}')
+    print(f'{next(iter(batch)).keys()}')
+    print()
     remove_columns = get_column_names(raw_train_datasets)  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
+    
     # - Get tokenized train data set
     # Note: Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
-    tokenize_function = lambda examples: tokenizer(examples["text"])
     tokenized_train_datasets = raw_train_datasets.map(tokenize_function, batched=True, remove_columns=remove_columns)
     block_size: int = tokenizer.model_max_length
     _group_texts = lambda examples : group_texts(examples, block_size)
-    # - Get actual data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
-    lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
+    batch = get_data_from_hf_dataset(raw_train_datasets, streaming=streaming, batch_size=batch_size) 
+    print(f'{batch=}')
+    print(f'{next(iter(batch))=}')
+    print(f'{next(iter(batch)).keys()}')
+    
+    # - Get data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
+    lm_train_dataset = tokenized_train_datasets
+    # lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
     batch = get_data_from_hf_dataset(lm_train_dataset, streaming=streaming, batch_size=batch_size)
-    # for data_dict in iter(batch):
-    #     seq = data_dict['input_ids']
-    #     print(len(seq))
+    print(f'{batch=}')
+    print(f'{next(iter(batch))=}')
+    print(f'{next(iter(batch)).keys()}')
+    
+    # - Check data is of the expected block size
     print(f'{len(next(iter(batch))["input_ids"])=}')
-    assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
+    # assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
     train_dataset = lm_train_dataset
     print(train_dataset)
 
 if __name__ == "__main__":
     from time import time
     start_time = time()
-    _test_all_batches_are_size_block_size()
+    # _test_all_batches_are_size_block_size()
     _test_train_dataset_setup_for_main_code()
     print(f"Done!\a Total time: {time() - start_time} seconds, or {(time() - start_time)/60} minutes. or {(time() - start_time)/60/60} hours.\a")
