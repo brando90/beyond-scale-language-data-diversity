@@ -29,6 +29,34 @@ import torch
 from transformers import GPT2LMHeadModel, PreTrainedTokenizer, AutoTokenizer, Trainer, TrainingArguments, AutoConfig
 import math
 
+import sys
+sys.path = [''] + sys.path
+from training.utils import get_column_names, get_data_from_hf_dataset, group_texts
+
+def get_eval_dataset():
+    # per_device_eval_batch_size = 4 
+    # eval_accumulation_steps=1
+    # # eval_steps=1
+    # eval_steps=1000
+    # # TODO: probably need to write a collate_fn for the eval so that the eval is done right?
+    # # TODO: we need ppl (and ideally token edit distance for eval, reason explained here: https://arxiv.org/abs/2304.15004)
+    # path, name = 'brando/debug1_af', None
+    # eval_dataset = load_dataset(path, name, streaming=False, split="test").with_format(type="torch") 
+    # eval_dataset = eval_dataset.select(range(per_device_eval_batch_size))  # ref: https://stackoverflow.com/questions/74257764/how-to-select-a-subset-of-the-eval-dataset-when-training-with-huggingface-traine
+    # ## eval_dataset = train_dataset  # TODO: fix obviously to something else using af
+    # raw_text_batch = eval_dataset.take(per_device_eval_batch_size) if streaming else eval_dataset.select(range(per_device_eval_batch_size))
+    # print(f'{raw_text_batch=}')
+    # print(f'{next(iter(raw_text_batch))=}')
+    # column_names = next(iter(raw_text_batch)).keys()
+    # def eval_preprocess(examples):
+    #     return tokenizer(examples["formal statement"] + [' '] + examples["generated informal statement"], padding="max_length", max_length=max_length, truncation=True, return_tensors="pt")
+    # remove_columns = column_names  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
+    # def map(batch):
+    #     return batch.map(eval_preprocess, batched=True, remove_columns=remove_columns)
+    # eval_dataset = map(eval_dataset)
+    # train_dataset = train_dataset
+    pass
+
 
 # -- Experiments 
 
@@ -50,7 +78,7 @@ def train():
     import random
     import math
     import os
-    buffer_size = 500_000
+    # buffer_size = 500_000  # can't remember what this was for and doesn't seem to be anywhere
     probabilities = []
     data_mixture_name = None
     streaming = True
@@ -76,7 +104,7 @@ def train():
     # mode = 'online'; seed = 0; report_to = 'wandb'
 
     # - c4 wt single
-    path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
+    # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
     path, name, data_files, split = ['c4'], ['en'], [None], ['train']
     # path, name, data_files, split = ['suolyer/pile_pile-cc'] + ['parquet'] * 4, [None] + ['hacker_news', 'nih_exporter', 'pubmed', 'uspto'], [None] + [urls_hacker_news, urls_nih_exporter, urls_pubmed, urls_uspto], ['validation'] + ['train'] * 4
     # pretrained_model_name_or_path = 'gpt2'
@@ -186,80 +214,43 @@ def train():
     print(f'Model is currently on: {next(iter(model.parameters())).device=}')
     # name = "tiiuae/falcon-rw-1b",
     
-    # -- Load datasets
-    # - Get train data set
+    # --- Load datasets
+    # -- Get train data set
+    # - Load interleaved combined datasets
     # train_datasets = [load_dataset(path, name, streaming=True, split="train").with_format("torch") for path, name in zip(path, name)]
     train_datasets = [load_dataset(path, name, data_files=data_file, streaming=streaming, split=split).with_format("torch") for path, name, data_file, split in zip(path, name, data_files, split)]
-    probabilities = [1.0/len(train_datasets) for _ in train_datasets]  # TODO: perhaps we should change weights to informal and formal have same weight? right now is just in terms of list of data sets perhaps having 2 interleaves one for formal one for informal then use another interleave and do 50/50?. 
-    train_dataset = interleave_datasets(train_datasets, probabilities)
-    # TODO: suffle data set False, True, note i've experienced that with shuffle_ds.take(512) is slow...
-    shuffled_dataset = train_dataset.shuffle(buffer_size=buffer_size, seed=seed) if shuffle else train_dataset
-    batch = shuffled_dataset.take(batch_size) if streaming else shuffled_dataset.select(random.sample(list(range(len(shuffled_dataset))), batch_size))
-    # print(f'{batch=}')
-    # column_names = next(iter(batch)).keys()
-    def preprocess(examples):
-        return tokenizer(examples["text"], padding="max_length", max_length=max_length, truncation=True, return_tensors="pt")
-        # return tokenizer(examples["text"], padding="max_length", max_length=model.config.context_length, truncation=True, return_tensors="pt")
-    # collate function does this already
-    # remove_columns = column_names  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
-    # def map(batch):
-    #     return batch.map(preprocess, batched=True, remove_columns=remove_columns)
-    # train_dataset = map(train_dataset)
+    probabilities = [1.0/len(train_datasets) for _ in train_datasets]  
+    # - Get raw train data set
+    raw_train_datasets = interleave_datasets(train_datasets, probabilities)
+    remove_columns = get_column_names(raw_train_datasets)  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
+    # - Get tokenized train data set
+    # Note: Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
+    tokenize_function = lambda examples: tokenizer(examples["text"])
+    tokenized_train_datasets = raw_train_datasets.map(tokenize_function, batched=True, remove_columns=remove_columns)
+    block_size: int = tokenizer.model_max_length
+    _group_texts = lambda examples : group_texts(examples, block_size)
+    # - Get actual data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
+    lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
+    batch = get_data_from_hf_dataset(lm_train_dataset, streaming=streaming, batch_size=batch_size)
+    print(f'{len(next(iter(batch))["input_ids"])=}')
+    assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
+    train_dataset = lm_train_dataset
 
-    # - Get eval data set (AF for us), https://huggingface.co/datasets/brando/debug1_af
-    per_device_eval_batch_size = 4  # TODO: change to something larger, right now due to size of my debug0
-    eval_accumulation_steps=1
-    # eval_steps=1
-    eval_steps=1000
-    # TODO: probably need to write a collate_fn for the eval so that the eval is done right?
-    # TODO: we need ppl (and ideally token edit distance for eval, reason explained here: https://arxiv.org/abs/2304.15004)
-    path, name = 'brando/debug1_af', None
-    eval_dataset = load_dataset(path, name, streaming=False, split="test").with_format(type="torch") 
-    eval_dataset = eval_dataset.select(range(per_device_eval_batch_size))  # ref: https://stackoverflow.com/questions/74257764/how-to-select-a-subset-of-the-eval-dataset-when-training-with-huggingface-traine
-    ## eval_dataset = train_dataset  # TODO: fix obviously to something else using af
-    raw_text_batch = eval_dataset.take(per_device_eval_batch_size) if streaming else eval_dataset.select(range(per_device_eval_batch_size))
-    print(f'{raw_text_batch=}')
-    print(f'{next(iter(raw_text_batch))=}')
-    column_names = next(iter(raw_text_batch)).keys()
-    def eval_preprocess(examples):
-        return tokenizer(examples["formal statement"] + [' '] + examples["generated informal statement"], padding="max_length", max_length=max_length, truncation=True, return_tensors="pt")
-    remove_columns = column_names  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
-    def map(batch):
-        return batch.map(eval_preprocess, batched=True, remove_columns=remove_columns)
-    eval_dataset = map(eval_dataset)
-    train_dataset = train_dataset
+    # NOTE: Eval during training removed because it can cause gpu OMM memory issues
+    # # - Get eval data set 
 
-    # -- Compute max steps
+    # -- max steps manually decided depending on how many tokens we want to train on
     per_device_train_batch_size = batch_size
     print(f'{per_device_train_batch_size=}')
-    # dataset_size: int = int(1.5e12)  # TODO, doesn't seem easy to solve. Either count all the sequennces/rows or have the meta data have this. Or make this number huge. 
-    dataset_size: int = train_dataset.num_rows
-    # dataset_size: int = len(train_dataset)
-    # TODO dataset.info['split']['train']['num_examples']
-    # dataset_size = sum(len(dataset) for dataset in datasets)  # TODO: works on with streaming = False?
-    # dataset_size = sum(dataset.cardinality() for dataset in datasets)
-    print(f'{dataset_size=}')
-    # # TODO: feel free to fix the issue if I'm not seeing all the data points...
-    # num_epochs = 1
-    max_steps = (dataset_size // per_device_train_batch_size) * num_epochs
+    max_steps = 1 # <- CHANGE THIS
     print(f'{num_epochs=} {max_steps=}')
-    ## DOESNT WORK num_train_epochs = 3  # TODO: since I decided to do streaming = False and if we collect enough data it's unlikely we see it all hopefully (if we do 3 times seems good given that LLMs are trained to see the data only once this seems a sensible soln, + in the imagenet days things were trained to convergence with no overfitting ref: https://arxiv.org/abs/1801.00173)
-
-    # -- Define custom collate function
-    # def custom_collate_fn(data: list[dict[str, str]], tokenizer: PreTrainedTokenizer) -> dict[str, torch.Tensor]:
-    from src.train.utils import collate_fn_train_only_first_eos_token_mask_everything_after_it
-    custom_collate_fn: Callable = lambda data, tokenizer : collate_fn_train_only_first_eos_token_mask_everything_after_it(data, tokenizer=tokenizer, max_length=max_length)
-
-    # - Debug before training to see data
-    sample_data = train_dataset.select(range(per_device_train_batch_size)) if not isinstance(train_dataset, datasets.iterable_dataset.IterableDataset) else train_dataset.take(per_device_train_batch_size)
-    processed_data = custom_collate_fn(sample_data, tokenizer=tokenizer)
-    print(f'{processed_data=}')
 
     # -- Training arguments and trainer instantiation ref: https://huggingface.co/docs/transformers/v4.31.0/en/main_classes/trainer#transformers.TrainingArguments
-    output_dir = Path(f'~/data/maf_data/results_{today}/').expanduser() if not debug else Path(f'~/data/maf_data/results/').expanduser()
-    print(f'{debug=} {output_dir=} \n {report_to=}')
+    # output_dir = Path(f'~/data/results_{today}/').expanduser() if not debug else Path(f'~/data/results/').expanduser()
+    # print(f'{debug=} {output_dir=} \n {report_to=}')
     training_args = TrainingArguments(
-        output_dir=output_dir,  #The output directory where the model predictions and checkpoints will be written.
+        # output_dir=output_dir,  # The output directory where the model predictions and checkpoints will be written.
+        output_dir='.',  # The output directory where the model predictions and checkpoints will be written.
         # num_train_epochs = num_train_epochs, 
         max_steps=max_steps,  # TODO: hard to fix, see above
         per_device_train_batch_size=per_device_train_batch_size,
@@ -276,29 +267,28 @@ def train():
         logging_dir=Path('~/data/maf/logs').expanduser(),
         save_steps=2000,  # alpaca does 2000, other defaults were 500
         # logging_steps=250,
-        logging_steps=50,  
-        # logging_steps=1,
+        # logging_steps=50,  
+        logging_steps=1,
         remove_unused_columns=False,  # TODO don't get why https://stackoverflow.com/questions/76879872/how-to-use-huggingface-hf-trainer-train-with-custom-collate-function/76929999#76929999 , https://claude.ai/chat/475a4638-cee3-4ce0-af64-c8b8d1dc0d90
         report_to=report_to,  # change to wandb!
         fp16=False,  # never ever set to True
         bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8,  # if >= 8 ==> brain float 16 available or set to True if you always want fp32
-        evaluation_strategy='steps',
-        per_device_eval_batch_size=per_device_eval_batch_size,
-        eval_accumulation_steps=eval_accumulation_steps,
-        eval_steps=eval_steps,
+        # evaluation_strategy='steps',
+        # per_device_eval_batch_size=per_device_eval_batch_size,
+        # eval_accumulation_steps=eval_accumulation_steps,
+        # eval_steps=eval_steps,
     )
-    # print(f'{training_args=}')
     print(f'{pretrained_model_name_or_path=}')
 
     # TODO: might be nice to figure our how llamav2 counts the number of token's they've trained on
     print(f'{train_dataset=}')
-    print(f'{eval_dataset=}')
+    # print(f'{eval_dataset=}')
     trainer = Trainer(
         model=model,
         args=training_args,  
         train_dataset=train_dataset,
-        eval_dataset=eval_dataset,
-        data_collator=lambda data: custom_collate_fn(data, tokenizer=tokenizer)
+        # eval_dataset=eval_dataset,
+        # data_collator=lambda data: custom_collate_fn(data, tokenizer=tokenizer)
     )
     # - TODO bellow is for qlora from falcon, has same interface as Trainer later lets use: https://github.com/artidoro/qlora
     # from trl import SFTTrainer
@@ -322,7 +312,7 @@ def train():
     if cuda_visible_devices is not None:
         print(f"CUDA_VISIBLE_DEVICES = {cuda_visible_devices}")
     trainer.train()
-    trainer.save_model(output_dir=output_dir)  # TODO is this relaly needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
+    trainer.save_model(output_dir=output_dir)  # TODO is this really needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
     print('Done!\a')
 
 def main():  
