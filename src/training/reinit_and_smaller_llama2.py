@@ -82,23 +82,23 @@ def reinitialize_weights(model,
             if module.bias is not None:
                 nn.init.constant_(module.bias, 0)
 
-def reinitialize_weights_xavier(model,):
-    """ Reinit with xavier """
-    for module in model.modules():
-        if isinstance(module, nn.Linear):
-            nn.init.xavier_normal_(module.weight)
-            if module.bias is not None:
-                nn.init.constant_(module.bias, 0)
+def reinitialize_weights_xavier(model):
+    # """ Reinit with xavier """
+    # for module in model.modules():
+    #     if isinstance(module, nn.Linear):
+    #         nn.init.xavier_normal_(module.weight)
+    #         if module.bias is not None:
+    #             nn.init.constant_(module.bias, 0)
+    pass
 
-
-def reinitialize_weights_kamming(model,):
-    """ Reinit with xavier """
+def reinitialize_weights_kamming(model):
+    """ Reinit with kamming ref: https://pytorch.org/docs/stable/nn.init.html#torch.nn.init.kaiming_uniform_ """
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
             nn.init.kaiming_uniform_(module.weight)
             if 'norm' in name.lower() or 'norm' in str(module).lower():
                 nn.init.constant_(module.weight, 1)
-                nn.init.constant_(module.bias, 0)
+                # nn.init.constant_(module.bias, 0)
             if module.bias is not None:
                 nn.init.constant_(module.bias, 0)
     
@@ -106,8 +106,14 @@ def get_microscopic_llama2(verbose: bool = True):
     raise NotImplementedError
     # return get_smaller_llama2(hidden_size=2, num_hidden_layers=3, verbose=verbose)
 
-def get_deafult_smallest_llama2(verbose: bool = True):
+def _get_deafult_smallest_llama2_debugging(verbose: bool = True):
     return get_smaller_llama2(hidden_size=32, num_hidden_layers=1, verbose=verbose)
+
+def get_deafult_smallest_baby_llama2_v1(verbose: bool = False):
+    return get_smaller_llama2(hidden_size=32, num_hidden_layers=32, verbose=verbose)
+
+def get_deafult_smallest_baby_llama2_v2(verbose: bool = False):
+    return get_smaller_llama2(hidden_size=32*3, num_hidden_layers=32, verbose=verbose)
 
 def get_full_llama7b(gpu_idx: int = -1):
     config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf", torch_dtype="auto")
@@ -119,6 +125,7 @@ def get_full_llama7b(gpu_idx: int = -1):
 
 def get_smaller_llama2(hidden_size : int = 2048, 
                        num_hidden_layers : int = 12, 
+                       return_tokenizer: bool = False, 
                        verbose : bool = False,):
     config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf")
     config.hidden_size = hidden_size
@@ -128,50 +135,58 @@ def get_smaller_llama2(hidden_size : int = 2048,
     if verbose:
         print(f'config: {config}')
         print("Original number of parameters:", sum(p.numel() for p in model.parameters()))
+    if return_tokenizer:
+        tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+        return smaller_model, tokenizer
     return smaller_model
 
-def _test_generate_smaller_model():
-    """
-    ref: https://stackoverflow.com/questions/76971761/how-to-adapt-llama-v2-model-to-less-than-7b-parameters
-    """
-    print('Starting to generate a smaller model...')
-    # Load the pretrained LLaMA v2 config
-    config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf")
-    print(f'config: {config} {type(config)}')
-    print()
-    # Print the original number of parameters 
-    model = AutoModelForCausalLM.from_config(config) 
-    print("Original number of parameters:", sum(p.numel() for p in model.parameters()))
+# def _test_generate_smaller_model():
+#     """
+#     ref: https://stackoverflow.com/questions/76971761/how-to-adapt-llama-v2-model-to-less-than-7b-parameters
+#     """
+#     print('Starting to generate a smaller model...')
+#     # Load the pretrained LLaMA v2 config
+#     config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf")
+#     print(f'config: {config} {type(config)}')
+#     print()
+#     # Print the original number of parameters 
+#     model = AutoModelForCausalLM.from_config(config) 
+#     print("Original number of parameters:", sum(p.numel() for p in model.parameters()))
 
-    # Modify the config to reduce size
-    config.hidden_size = 2048
-    config.num_hidden_layers = 12
+#     # Modify the config to reduce size
+#     config.hidden_size = 2048
+#     config.num_hidden_layers = 12
 
-    # Create a new smaller model from the modified config
-    smaller_model = AutoModelForCausalLM.from_config(config)
-    print("New number of parameters:", sum(p.numel() for p in smaller_model.parameters()))
+#     # Create a new smaller model from the modified config
+#     smaller_model = AutoModelForCausalLM.from_config(config)
+#     print("New number of parameters:", sum(p.numel() for p in smaller_model.parameters()))
 
 def _test_reinit_model():
     """ 
-    export CUDA_VISIBLE_DEVICES=6
+export CUDA_VISIBLE_DEVICES=6
     """
     torch.cuda.empty_cache() 
     print('Starting to reinitialize the model...')
     
     # - Get smaller llama2 model
     # model = get_deafult_smallest_llama2()
-    model = get_full_llama7b()
+    # model = get_deafult_smallest_baby_llama2_v1()
+    model = get_deafult_smallest_baby_llama2_v2()
+    # model = get_full_llama7b()
     device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
+    print("Original number of parameters:", sum(p.numel() for p in model.parameters()))
     # - Check norm before reinitialization
     print("-- NORM OF ENTIRE NET BEFORE REINITIALIZATION:")
     total_weight_norm = get_weight_norms(model)
     print(f"Total weight norm: {total_weight_norm}")
     # - Reinitialize weights
-    reinitialize_weights(model)
+    # reinitialize_weights(model)
+    reinitialize_weights_kamming(model)
     print("-- NORM OF ENTIRE NET AFTER REINITIALIZATION:")
-    total_weight_norm = get_weight_norms(model)
-    print(f"Total weight norm: {total_weight_norm}")
+    total_weight_norm_reinit = get_weight_norms(model)
+    print(f"Total weight norm: {total_weight_norm_reinit}")
+    assert total_weight_norm_reinit != total_weight_norm, f'Error: total_weight_norm_reinit == total_weight_norm' 
 
 if __name__ == '__main__':
     import time

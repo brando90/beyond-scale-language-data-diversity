@@ -30,6 +30,7 @@ from transformers import GPT2LMHeadModel, PreTrainedTokenizer, AutoTokenizer, Tr
 import math
 
 import sys
+from training.reinit_and_smaller_llama2 import get_deafult_smallest_baby_llama2_v1
 sys.path = [''] + sys.path
 from training.utils import get_column_names, get_data_from_hf_dataset, group_texts
 
@@ -113,6 +114,7 @@ def train():
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-13b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-70b-hf'
     # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
+    pretrained_model_name_or_path = 'baby_llama2_v1'
     # - important training details or it wont run, mem issues maybe
     num_epochs = 1
     # num_epochs = 2
@@ -209,6 +211,9 @@ def train():
             # CHUNK_SIZE = 16_896  # approximately trying to fill the llama2 context length of 4096
             max_length = 4096
         print(f'{max_length=}')
+    elif 'baby_llama2_v1' in pretrained_model_name_or_path:
+        model = get_deafult_smallest_baby_llama2_v1()
+        tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
     # print(f'{device=}')
     print(f'{torch.cuda.device_count()=} (makes sure GPUs are visible and accesible to Pytorch.)')
     print(f'Model is currently on: {next(iter(model.parameters())).device=}')
@@ -236,9 +241,6 @@ def train():
     assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
     train_dataset = lm_train_dataset
 
-    # NOTE: Eval during training removed because it can cause gpu OMM memory issues
-    # # - Get eval data set 
-
     # -- max steps manually decided depending on how many tokens we want to train on
     per_device_train_batch_size = batch_size
     print(f'{per_device_train_batch_size=}')
@@ -247,10 +249,11 @@ def train():
 
     # -- Training arguments and trainer instantiation ref: https://huggingface.co/docs/transformers/v4.31.0/en/main_classes/trainer#transformers.TrainingArguments
     # output_dir = Path(f'~/data/results_{today}/').expanduser() if not debug else Path(f'~/data/results/').expanduser()
+    output_dir = '.'
     # print(f'{debug=} {output_dir=} \n {report_to=}')
     training_args = TrainingArguments(
-        # output_dir=output_dir,  # The output directory where the model predictions and checkpoints will be written.
-        output_dir='.',  # The output directory where the model predictions and checkpoints will be written.
+        output_dir=output_dir,  # The output directory where the model predictions and checkpoints will be written.
+        # output_dir='.',  # The output directory where the model predictions and checkpoints will be written.
         # num_train_epochs = num_train_epochs, 
         max_steps=max_steps,  # TODO: hard to fix, see above
         per_device_train_batch_size=per_device_train_batch_size,
@@ -313,6 +316,55 @@ def train():
         print(f"CUDA_VISIBLE_DEVICES = {cuda_visible_devices}")
     trainer.train()
     trainer.save_model(output_dir=output_dir)  # TODO is this really needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
+
+    # - Eval 
+    # - Get eval data set: NOTE: we are evaluating at the end not during training
+    path, name, data_file, split = 'Skylion007/openwebtext', None, [None], 'train'  # ok to eval train since we didn't train on openwebtext
+    eval_dataset = load_dataset(path, name, data_files=data_file, streaming=streaming, split=split).with_format("torch") 
+    per_device_eval_batch_size = 2
+    eval_accumulation_steps = 2
+    eval_steps = 1
+    max_steps = 1
+    # max_eval_samples = data_args.max_eval_samples
+    # eval_dataset = eval_dataset.take(max_eval_samples)
+
+    training_args = TrainingArguments(
+        output_dir=output_dir,  # The output directory where the model predictions and checkpoints will be written.
+        # output_dir='.',  # The output directory where the model predictions and checkpoints will be written.
+        # num_train_epochs = num_train_epochs, 
+        max_steps=max_steps,  # TODO: hard to fix, see above
+        optim="paged_adamw_32bit",  # David hall says to keep 32bit opt https://arxiv.org/pdf/2112.11446.pdf TODO: if we are using brain float 16 bf16 should we be using 32 bit? are optimizers always fb32?  https://discuss.huggingface.co/t/is-there-a-paged-adamw-16bf-opim-option/51284
+        learning_rate = 0,  # TODO once real training change? anything larger than -3 I've had terrible experiences with
+        logging_dir=Path('~/data/maf/logs').expanduser(),
+        # save_steps=2000,  # alpaca does 2000, other defaults were 500
+        # logging_steps=250,
+        # logging_steps=50,  
+        logging_steps=1,
+        remove_unused_columns=False,  # TODO don't get why https://stackoverflow.com/questions/76879872/how-to-use-huggingface-hf-trainer-train-with-custom-collate-function/76929999#76929999 , https://claude.ai/chat/475a4638-cee3-4ce0-af64-c8b8d1dc0d90
+        report_to=report_to,  # change to wandb!
+        fp16=False,  # never ever set to True
+        bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8,  # if >= 8 ==> brain float 16 available or set to True if you always want fp32
+        evaluation_strategy='steps',
+        per_device_eval_batch_size=per_device_eval_batch_size,
+        eval_accumulation_steps=eval_accumulation_steps,
+        eval_steps=eval_steps,
+    )
+
+    trainer = Trainer(
+        model=model,
+        args=training_args,  
+        train_dataset=None,
+        eval_dataset=eval_dataset,
+    )
+    metrics = trainer.evaluate()
+    try:
+        perplexity = math.exp(metrics["eval_loss"])
+    except OverflowError:
+        perplexity = float("inf")
+    metrics["perplexity"] = perplexity
+    print(f'Eval metrics: {metrics=}')
+    trainer.log_metrics("eval", metrics)
+    trainer.save_metrics("eval", metrics)
     print('Done!\a')
 
 def main():  
