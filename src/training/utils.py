@@ -17,6 +17,13 @@ from datasets import load_dataset, interleave_datasets
 from transformers import PreTrainedTokenizer, AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, AutoConfig
 from transformers.testing_utils import CaptureLogger
 
+def get_freest_gpu():
+    # Get the index of the GPU with the most free memory
+    devices = list(range(torch.cuda.device_count()))
+    free_memory = [torch.cuda.memory_reserved(device) - torch.cuda.memory_allocated(device) for device in devices]
+    freest_device = devices[free_memory.index(max(free_memory))]
+    return freest_device
+
 # Use for IterableDatasetDict objects (i.e. streaming=T, split is unspecified (each key in dict is name of split))
 def view_exs_iterable_dataset_dict(dataset, num_exs=10, split='train'):
   dataset_split = dataset[split]
@@ -125,11 +132,7 @@ def group_texts(examples, # if batched=True it's a dict of input_ids, attention_
     """
     tokenizer = ...obtained from your model... 
     tokenize_function = lambda examples: tokenize_function(examples, tokenizer=tokenizer) 
-    tokenized_datasets = raw_datasets.map(
-            tokenize_function,
-            batched=True,
-            remove_columns=column_names,
-        )
+    tokenized_datasets = raw_datasets.map(tokenize_function, batched=True, remove_columns=column_names)
 
     # Note that with `batched=True`, this map processes 1,000 texts together, so group_texts throws away a remainder
     # for each of those groups of 1,000 texts. You can adjust that batch_size here but a higher value might be slower
@@ -139,6 +142,42 @@ def group_texts(examples, # if batched=True it's a dict of input_ids, attention_
     # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.map    
     """
     # Concatenate all texts.
+    concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
+    total_length = len(concatenated_examples[list(examples.keys())[0]])
+    # We drop the small remainder, and if the total_length < block_size  we exclude this batch and return an empty dict.
+    # We could add padding if the model supported it instead of this drop, you can customize this part to your needs.
+    total_length = (total_length // block_size) * block_size
+    # Split by chunks of max_len.
+    result = {
+        k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
+        for k, t in concatenated_examples.items()
+    }
+    result["labels"] = result["input_ids"].copy()
+    return result
+
+def group_texts_v2(examples, # if batched=True it's a dict of input_ids, attention_mask, labels of len(examples['input_ids']) = 1000 
+                block_size: int,  # 4096, 1024
+                ):
+    """
+    tokenizer = ...obtained from your model... 
+    tokenize_function = lambda examples: tokenize_function(examples, tokenizer=tokenizer) 
+    tokenized_datasets = raw_datasets.map(tokenize_function, batched=True, remove_columns=column_names)
+    _group_texts = lambda examples : group_texts_v2(examples, block_size)
+    lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
+
+    if used as above then examples is
+    examples = {'input_ids': [[...], [...], ...], 'attention_mask': [[...], [...], ...], 'labels': [[...], [...], ...]]]}
+    examples.keys() = dict_keys(['input_ids', 'attention_mask'])
+    type(examples) = <class 'dict'>
+    type(examples['input_ids']) = <class 'list'>
+    len(examples['input_ids']) = 1000  # if batched=True
+
+    # Note that with `batched=True`, this map processes 1,000 texts together, so group_texts throws away a remainder for each of those groups of 1,000 texts. 
+    #
+    # To speed up this part, we use multiprocessing. See the documentation of the map method for more information:
+    # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.map    
+    """
+    # Concatenate all texts for each key in the examples e.g., it creates one concatenated list of all input_ids, one for all attention_mask, etc.
     concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
     total_length = len(concatenated_examples[list(examples.keys())[0]])
     # We drop the small remainder, and if the total_length < block_size  we exclude this batch and return an empty dict.
@@ -246,7 +285,7 @@ def _test_all_batches_are_size_block_size():
     # print(f'{next(iter(batch)).keys()}')
     # print()
 
-    # get batch
+    # - Make sure all seq are of length block_size
     batch = get_data_from_hf_dataset(lm_datasets, streaming=streaming, batch_size=batch_size)
     for data_dict in iter(batch):
         seq = data_dict['input_ids']
@@ -266,7 +305,8 @@ def _test_train_dataset_setup_for_main_code():
 
     # -- Get tokenizer and model
     # tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
-    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    tokenizer = AutoTokenizer.from_pretrained('mistralai/Mistral-7B-v0.1', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+    # tokenizer = AutoTokenizer.from_pretrained("gpt2")
     tokenize_function = lambda examples: tokenizer(examples["text"])
     # torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32  # if >= 8 ==> brain float 16 available or set to True if you always want fp32 
     # model = AutoModelForCausalLM.from_pretrained('meta-llama/Llama-2-7b-hf', trust_remote_code=True, torch_dtype=torch_dtype, use_auth_token=True)
@@ -287,26 +327,32 @@ def _test_train_dataset_setup_for_main_code():
     # - Get tokenized train data set
     # Note: Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
     tokenized_train_datasets = raw_train_datasets.map(tokenize_function, batched=True, remove_columns=remove_columns)
-    block_size: int = tokenizer.model_max_length
-    _group_texts = lambda examples : group_texts(examples, block_size)
-    batch = get_data_from_hf_dataset(raw_train_datasets, streaming=streaming, batch_size=batch_size) 
+    # block_size: int = tokenizer.model_max_length
+    block_size: int = 4096
+    assert block_size != 1000000000000000019884624838656, f'Error, block_size is {block_size} which is the default value. This is likely because you are using a tokenizer that does not have a model_max_length attribute. Please set block_size to a value that makes sense for your model.'
+    _group_texts = lambda examples : group_texts_v2(examples, block_size)
+    batch = get_data_from_hf_dataset(tokenized_train_datasets, streaming=streaming, batch_size=batch_size) 
     print(f'{batch=}')
     print(f'{next(iter(batch))=}')
     print(f'{next(iter(batch)).keys()}')
     
-    # - Get data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
-    lm_train_dataset = tokenized_train_datasets
-    # lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
+    # - Get data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)    lm_train_dataset = tokenized_train_datasets
+    lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
     batch = get_data_from_hf_dataset(lm_train_dataset, streaming=streaming, batch_size=batch_size)
     print(f'{batch=}')
-    print(f'{next(iter(batch))=}')
+    # - get an example for debugging
+    # batch = iter(batch)
+    # example = next(batch)
+    # print(f'{example=}')
+    # print(f'{next(iter(batch))=}')
     print(f'{next(iter(batch)).keys()}')
     
-    # - Check data is of the expected block size
-    print(f'{len(next(iter(batch))["input_ids"])=}')
-    # assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
-    train_dataset = lm_train_dataset
-    print(train_dataset)
+    # - Make sure all seq are of length block_size
+    batch = get_data_from_hf_dataset(lm_train_dataset, streaming=streaming, batch_size=batch_size)
+    for data_dict in iter(batch):
+        seq = data_dict['input_ids']
+        print(len(seq))
+    print('Success!')
 
 if __name__ == "__main__":
     from time import time
