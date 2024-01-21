@@ -70,7 +70,7 @@ def train():
     batch_size = 2
     gradient_accumulation_steps = 2
     num_epochs = 1
-    num_tokens = None
+    num_tokens_trained = None
     num_batches=1
 
     # -- Setup wandb
@@ -81,13 +81,13 @@ def train():
     # - Online (real experiment)
     mode = 'online'; seed = 0; report_to = 'wandb'
 
-    # - c4 wt single
+    # - train data sets
     # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
-    path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
+    # path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
     # path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
-    # path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
-    # path, name, data_files, split = ['suolyer/pile_pile-cc'] + ['parquet'] * 4, [None] + ['hacker_news', 'nih_exporter', 'pubmed', 'uspto'], [None] + [urls_hacker_news, urls_nih_exporter, urls_pubmed, urls_uspto], ['validation'] + ['train'] * 4
+    path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
+    # - models
     # pretrained_model_name_or_path = 'gpt2'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-chat-hf'
@@ -96,7 +96,8 @@ def train():
     # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
     pretrained_model_name_or_path = 'baby_llama2_v1'
     # - important training details or it wont run, mem issues maybe
-    max_steps = 19_073 # <- CHANGE THIS
+    # max_steps = 19_073 # <- CHANGE THIS  11 days with baby llama2 v1
+    max_steps = 866 # <- CHANGE THIS
     L = 4096
     num_batches=1
     # single gpu
@@ -113,7 +114,7 @@ def train():
     num_tokens_trained = max_steps * batch_size * L * num_batches 
     today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
     # run_name = f'{path} div_coeff_{num_batches=} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=})'
-    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens=} {gradient_accumulation_steps=})'
+    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=})'
     print(f'\n---> {run_name=}\n')
 
     # - Init wandb
@@ -253,7 +254,8 @@ def train():
         max_grad_norm=1.0, # TODO once real training change?
         lr_scheduler_type="cosine",  # TODO once real training change? using what I've seen most in vision 
         logging_dir=Path('~/data/maf/logs').expanduser(),
-        save_steps=4000,  # alpaca does 2000, other defaults were 500
+        # save_steps=4000,  # alpaca does 2000, other defaults were 500
+        save_steps=max_steps//3,  # alpaca does 2000, other defaults were 500
         # save_steps=1,  # alpaca does 2000, other defaults were 500
         # logging_steps=250,
         logging_steps=50,  

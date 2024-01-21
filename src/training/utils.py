@@ -450,6 +450,7 @@ def _test_expt_planning():
     max_steps = num_tokens_desired / (batch_size * L * num_batches)
     print(f'{max_steps=}')
     # 19_073
+    # 281:07:43 --> 11 days ...
 
     # -- 5.5M tokens
     num_tokens_desired: int = int(5.5e6)

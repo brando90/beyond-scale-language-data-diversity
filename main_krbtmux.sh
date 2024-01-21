@@ -34,40 +34,8 @@ python -c "import torch; print(torch.bfloat16);"
 krbtmux
 reauth
 
-ssh brando9@ampere1.stanford.edu
-ssh brando9@hyperturing1.stanford.edu
-ssh brando9@hyperturing2.stanford.edu
 tmux ls
-
-tmux new -s rand
-tmux new -s rand0
-tmux new -s rand1
-tmux new -s rand2
-tmux new -s rand3
-tmux new -s rand4
-tmux new -s rand5
-tmux new -s rand6
-tmux new -s rand7
-tmux new -s rand8
-tmux new -s rand9
-tmux new -s rand10
-tmux new -s rand11
-tmux new -s rand12
-tmux new -s rand13
-tmux new -s rand14
-tmux new -s rand15
-tmux new -s rand16
-tmux new -s rand17
-tmux new -s rand18
-tmux new -s rand19
-tmux new -s rand20
-tmux new -s rand21
-tmux new -s rand22
-tmux new -s rand23
-tmux new -s rand24
-reauth
-
-# - Min setup code for ru
+tmux new -s 1
 reauth
 
 source $AFS/.bashrc
