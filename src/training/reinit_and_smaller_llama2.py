@@ -235,7 +235,7 @@ def get_microscopic_llama2(verbose: bool = True):
 def _get_deafult_smallest_llama2_debugging(verbose: bool = True):
     return get_smaller_llama2(hidden_size=32, num_hidden_layers=1, verbose=verbose)
 
-def get_deafult_smallest_baby_llama2_v1_36m_0p036b(verbose: bool = False):
+def get_deafult_smallest_baby_llama2_v1_36m_0p036b(verbose: bool = False, reinit: bool = True):
     """ 
     with hps: 
         hidden_size=32, num_hidden_layers=32
@@ -249,16 +249,16 @@ def get_deafult_smallest_baby_llama2_v1_36m_0p036b(verbose: bool = False):
     Total weight norm (after): total_weight_norm_after_reinit=7483.21137085557
     """
     print('Warning: you might need to reinit the weights if your using baby llama2.')
-    return get_smaller_llama2(hidden_size=32, num_hidden_layers=32, verbose=verbose)
+    return get_smaller_llama2(hidden_size=32, num_hidden_layers=32, verbose=verbose, reinit=reinit)
 
-def get_deafult_smallest_baby_llama2_v2_109m_0p109(verbose: bool = False):
+def get_deafult_smallest_baby_llama2_v2_109m_0p109(verbose: bool = False, reinit: bool = True):
     """  
     with hps:
         hidden_size=32*3, num_hidden_layers=32
     num_params = 108_779_616
     109M ~ 108_779_616 
     """
-    return get_smaller_llama2(hidden_size=32*3, num_hidden_layers=32, verbose=verbose)
+    return get_smaller_llama2(hidden_size=32*3, num_hidden_layers=32, verbose=verbose, reinit=reinit)
 
 def get_full_llama7b(gpu_idx: int = -1):
     config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf", torch_dtype="auto")

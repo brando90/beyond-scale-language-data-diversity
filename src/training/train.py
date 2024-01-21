@@ -70,6 +70,8 @@ def train():
     batch_size = 2
     gradient_accumulation_steps = 2
     num_epochs = 1
+    num_tokens = None
+    num_batches=1
 
     # -- Setup wandb
     import wandb
@@ -94,9 +96,9 @@ def train():
     # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
     pretrained_model_name_or_path = 'baby_llama2_v1'
     # - important training details or it wont run, mem issues maybe
-    num_epochs = 1
-    # num_epochs = 2
-    # num_epochs = 4
+    max_steps = 19_073 # <- CHANGE THIS
+    L = 4096
+    num_batches=1
     # single gpu
     # batch_size, gradient_accumulation_steps = 2, 1  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
     # batch_size, gradient_accumulation_steps = 2, 16  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
@@ -107,10 +109,11 @@ def train():
     # gradient_checkpointing = False
     gradient_checkpointing = True
     print(f'{batch_size=} {gradient_accumulation_steps=} {gradient_checkpointing=} {num_epochs=}')
-    # -- wandb 
+    # -- wandb
+    num_tokens_trained = max_steps * batch_size * L * num_batches 
     today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
     # run_name = f'{path} div_coeff_{num_batches=} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=})'
-    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {num_epochs=} {batch_size=} {gradient_accumulation_steps=})'
+    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens=} {gradient_accumulation_steps=})'
     print(f'\n---> {run_name=}\n')
 
     # - Init wandb
@@ -227,7 +230,6 @@ def train():
     # -- max steps manually decided depending on how many tokens we want to train on
     per_device_train_batch_size = batch_size
     print(f'{per_device_train_batch_size=}')
-    max_steps = 150 # <- CHANGE THIS
     print(f'{num_epochs=} {max_steps=}')
 
     # -- Training arguments and trainer instantiation ref: https://huggingface.co/docs/transformers/v4.31.0/en/main_classes/trainer#transformers.TrainingArguments
@@ -251,8 +253,8 @@ def train():
         max_grad_norm=1.0, # TODO once real training change?
         lr_scheduler_type="cosine",  # TODO once real training change? using what I've seen most in vision 
         logging_dir=Path('~/data/maf/logs').expanduser(),
-        # save_steps=2000,  # alpaca does 2000, other defaults were 500
-        save_steps=1,  # alpaca does 2000, other defaults were 500
+        save_steps=4000,  # alpaca does 2000, other defaults were 500
+        # save_steps=1,  # alpaca does 2000, other defaults were 500
         # logging_steps=250,
         logging_steps=50,  
         # logging_steps=1,
@@ -305,7 +307,7 @@ def train():
     # - Evaluate model on OpenWebtext
     print('---- Evaluate model on OpenWebtext')
     streaming = True
-    max_eval_samples = 2 
+    max_eval_samples = 1024
     path, name, split = 'suolyer/pile_openwebtext2', None, 'validation'  # the one sudharsan used
     eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
     eval_dataset1 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
@@ -317,7 +319,7 @@ def train():
     # - Evaluate on C4
     print('---- Evaluate model on C4')
     streaming = True
-    max_eval_samples = 2
+    max_eval_samples = 1024
     path, name, split = 'c4', 'en', 'validation' 
     eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
     eval_dataset2 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)

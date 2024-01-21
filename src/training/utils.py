@@ -18,6 +18,17 @@ from datasets import load_dataset, interleave_datasets
 from transformers import PreTrainedTokenizer, AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, AutoConfig
 from transformers.testing_utils import CaptureLogger
 
+def num_tokens(max_steps: int, batch_size: int, L: int, num_batches: int) -> int:
+    """
+    All sequences are of length L, due to our block size code. 
+    num_batch = when using distributed training. 
+            num_tokens_trained = max_steps * batch_size * L * num_batches
+
+    how long do I have to train     
+    """
+    num_tokens_trained = max_steps * batch_size * L * num_batches
+    return num_tokens_trained
+
 def get_freest_gpu():
     # Get the index of the GPU with the most free memory
     devices = list(range(torch.cuda.device_count()))
@@ -429,9 +440,27 @@ def _test_train_dataset_setup_for_main_code():
         print(len(seq))
     print('Success!')
 
+def _test_expt_planning():
+    # -- 2.5B tokens
+    num_tokens_desired: int = int(2.5e9)
+    batch_size = 32
+    num_batches = 1
+    L = 4096
+    # num_tokens_trained = max_steps * batch_size * L * num_batches
+    max_steps = num_tokens_desired / (batch_size * L * num_batches)
+    print(f'{max_steps=}')
+    # 19_073
+
+    # -- 5.5M tokens
+    num_tokens_desired: int = int(5.5e6)
+    max_steps = num_tokens_desired / (batch_size * L * num_batches)
+    print(f'{max_steps=}')
+    # 42
+
 if __name__ == "__main__":
     from time import time
     start_time = time()
     # _test_all_batches_are_size_block_size()
-    _test_train_dataset_setup_for_main_code()
+    # _test_train_dataset_setup_for_main_code()
+    _test_expt_planning()
     print(f"Done!\a Total time: {time() - start_time} seconds, or {(time() - start_time)/60} minutes. or {(time() - start_time)/60/60} hours.\a")
