@@ -20,6 +20,8 @@ python trl/examples/scripts/sft_trainer.py \
 
 - qlora https://github.com/artidoro/qlora/blob/main/scripts/finetune_llama2_guanaco_7b.sh, 
 - https://github.com/artidoro/qlora/blob/main/qlora.py
+
+export CUDA_VISIBLE_DEVICES=6
 """
 from pathlib import Path
 from typing import Callable
@@ -30,33 +32,9 @@ from transformers import GPT2LMHeadModel, PreTrainedTokenizer, AutoTokenizer, Tr
 import math
 
 import sys
+from training.reinit_and_smaller_llama2 import get_deafult_smallest_baby_llama2_v1_36m_0p036b, get_weight_norms, reinitialize_weights_gpt_neox_20B_inspired_4_llama2
 sys.path = [''] + sys.path
-from training.utils import get_column_names, get_data_from_hf_dataset, group_texts
-
-def get_eval_dataset():
-    # per_device_eval_batch_size = 4 
-    # eval_accumulation_steps=1
-    # # eval_steps=1
-    # eval_steps=1000
-    # # TODO: probably need to write a collate_fn for the eval so that the eval is done right?
-    # # TODO: we need ppl (and ideally token edit distance for eval, reason explained here: https://arxiv.org/abs/2304.15004)
-    # path, name = 'brando/debug1_af', None
-    # eval_dataset = load_dataset(path, name, streaming=False, split="test").with_format(type="torch") 
-    # eval_dataset = eval_dataset.select(range(per_device_eval_batch_size))  # ref: https://stackoverflow.com/questions/74257764/how-to-select-a-subset-of-the-eval-dataset-when-training-with-huggingface-traine
-    # ## eval_dataset = train_dataset  # TODO: fix obviously to something else using af
-    # raw_text_batch = eval_dataset.take(per_device_eval_batch_size) if streaming else eval_dataset.select(range(per_device_eval_batch_size))
-    # print(f'{raw_text_batch=}')
-    # print(f'{next(iter(raw_text_batch))=}')
-    # column_names = next(iter(raw_text_batch)).keys()
-    # def eval_preprocess(examples):
-    #     return tokenizer(examples["formal statement"] + [' '] + examples["generated informal statement"], padding="max_length", max_length=max_length, truncation=True, return_tensors="pt")
-    # remove_columns = column_names  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
-    # def map(batch):
-    #     return batch.map(eval_preprocess, batched=True, remove_columns=remove_columns)
-    # eval_dataset = map(eval_dataset)
-    # train_dataset = train_dataset
-    pass
-
+from training.utils import eval_hf, get_column_names, get_data_from_hf_dataset, group_texts, raw_dataset_2_lm_data
 
 # -- Experiments 
 
@@ -96,31 +74,34 @@ def train():
     # -- Setup wandb
     import wandb
     # - Dryrun
-    # mode = 'dryrun'; seed = random.randint(0, 2**32 - 1)
-    mode = 'dryrun'; seed = 0; report_to = 'none'
+    # mode = 'dryrun'; seed = 0; report_to = 'none'
 
     # - Online (real experiment)
-    # mode = 'online'; seed = random.randint(0, 2**32 - 1)
-    # mode = 'online'; seed = 0; report_to = 'wandb'
+    mode = 'online'; seed = 0; report_to = 'wandb'
 
     # - c4 wt single
     # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
-    path, name, data_files, split = ['c4'], ['en'], [None], ['train']
+    # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
+    path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
+    # path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
+    # path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
     # path, name, data_files, split = ['suolyer/pile_pile-cc'] + ['parquet'] * 4, [None] + ['hacker_news', 'nih_exporter', 'pubmed', 'uspto'], [None] + [urls_hacker_news, urls_nih_exporter, urls_pubmed, urls_uspto], ['validation'] + ['train'] * 4
     # pretrained_model_name_or_path = 'gpt2'
-    pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
+    # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-chat-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-13b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-70b-hf'
     # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
+    pretrained_model_name_or_path = 'baby_llama2_v1'
     # - important training details or it wont run, mem issues maybe
     num_epochs = 1
     # num_epochs = 2
     # num_epochs = 4
     # single gpu
     # batch_size, gradient_accumulation_steps = 2, 1  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
-    batch_size, gradient_accumulation_steps = 2, 16  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    # batch_size, gradient_accumulation_steps = 2, 16  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
     # batch_size, gradient_accumulation_steps = 2, 32  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    batch_size, gradient_accumulation_steps = 1, 32  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
     # -- multiple gpus 3 4096 context len
     # batch_size, gradient_accumulation_steps = 4, 8  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
     # gradient_checkpointing = False
@@ -134,7 +115,7 @@ def train():
 
     # - Init wandb
     debug: bool = mode == 'dryrun'  # BOOL, debug?
-    run = wandb.init(mode=mode, project="maf", name=run_name, save_code=True)
+    run = wandb.init(mode=mode, project="beyond-scale", name=run_name, save_code=True)
     # wandb.config.update({"num_batches": num_batches, "path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path})
     wandb.config.update({"path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path, 'num_epochs': num_epochs, 'gradient_accumulation_steps': gradient_accumulation_steps})
     # run.notify_on_failure() # https://community.wandb.ai/t/how-do-i-set-the-wandb-alert-programatically-for-my-current-run/4891
@@ -154,15 +135,12 @@ def train():
         model = GPT2LMHeadModel.from_pretrained(pretrained_model_name_or_path)
         device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
+        block_size: int = tokenizer.model_max_length
     elif 'Llama-2' in pretrained_model_name_or_path or 'Mistral' in pretrained_model_name_or_path:
         # - llama2
         from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer
         # bf16 or fp32
-        bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8,  # if >= 8 ==> brain float 16 available or set to True if you always want fp32
-        if bf16:
-            torch_dtype = torch.bfloat16
-        else: 
-            torch_dtype = torch.float32
+        torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
         # get model
         model = AutoModelForCausalLM.from_pretrained(
             pretrained_model_name_or_path,
@@ -208,11 +186,22 @@ def train():
         else:
             # CHUNK_SIZE = 16_896  # approximately trying to fill the llama2 context length of 4096
             max_length = 4096
+        block_size: int = 4096
         print(f'{max_length=}')
-    # print(f'{device=}')
+    elif 'baby_llama2_v1' in pretrained_model_name_or_path:
+        model = get_deafult_smallest_baby_llama2_v1_36m_0p036b()
+        reinitialize_weights_gpt_neox_20B_inspired_4_llama2(model, L=4096)
+        tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+        device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
+        model = model.to(device)
+        torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
+        model = model.to(torch_dtype)
+        block_size: int = 4096
+    print("Number of parameters:", sum(p.numel() for p in model.parameters()))
+    print(f"Total weight norm: {get_weight_norms(model)=}")
     print(f'{torch.cuda.device_count()=} (makes sure GPUs are visible and accesible to Pytorch.)')
     print(f'Model is currently on: {next(iter(model.parameters())).device=}')
-    # name = "tiiuae/falcon-rw-1b",
+    print(f'Model is currently on: {next(iter(model.parameters())).dtype=}')
     
     # --- Load datasets
     # -- Get train data set
@@ -227,7 +216,6 @@ def train():
     # Note: Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
     tokenize_function = lambda examples: tokenizer(examples["text"])
     tokenized_train_datasets = raw_train_datasets.map(tokenize_function, batched=True, remove_columns=remove_columns)
-    block_size: int = tokenizer.model_max_length
     _group_texts = lambda examples : group_texts(examples, block_size)
     # - Get actual data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
     lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
@@ -236,21 +224,19 @@ def train():
     assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
     train_dataset = lm_train_dataset
 
-    # NOTE: Eval during training removed because it can cause gpu OMM memory issues
-    # # - Get eval data set 
-
     # -- max steps manually decided depending on how many tokens we want to train on
     per_device_train_batch_size = batch_size
     print(f'{per_device_train_batch_size=}')
-    max_steps = 1 # <- CHANGE THIS
+    max_steps = 150 # <- CHANGE THIS
     print(f'{num_epochs=} {max_steps=}')
 
     # -- Training arguments and trainer instantiation ref: https://huggingface.co/docs/transformers/v4.31.0/en/main_classes/trainer#transformers.TrainingArguments
-    # output_dir = Path(f'~/data/results_{today}/').expanduser() if not debug else Path(f'~/data/results/').expanduser()
+    output_dir = Path(f'~/data/results_{today}/').expanduser() if not debug else Path(f'~/data/results/').expanduser()
+    # output_dir = '.'
     # print(f'{debug=} {output_dir=} \n {report_to=}')
     training_args = TrainingArguments(
-        # output_dir=output_dir,  # The output directory where the model predictions and checkpoints will be written.
-        output_dir='.',  # The output directory where the model predictions and checkpoints will be written.
+        output_dir=output_dir,  # The output directory where the model predictions and checkpoints will be written.
+        # output_dir='.',  # The output directory where the model predictions and checkpoints will be written.
         # num_train_epochs = num_train_epochs, 
         max_steps=max_steps,  # TODO: hard to fix, see above
         per_device_train_batch_size=per_device_train_batch_size,
@@ -265,10 +251,11 @@ def train():
         max_grad_norm=1.0, # TODO once real training change?
         lr_scheduler_type="cosine",  # TODO once real training change? using what I've seen most in vision 
         logging_dir=Path('~/data/maf/logs').expanduser(),
-        save_steps=2000,  # alpaca does 2000, other defaults were 500
+        # save_steps=2000,  # alpaca does 2000, other defaults were 500
+        save_steps=1,  # alpaca does 2000, other defaults were 500
         # logging_steps=250,
-        # logging_steps=50,  
-        logging_steps=1,
+        logging_steps=50,  
+        # logging_steps=1,
         remove_unused_columns=False,  # TODO don't get why https://stackoverflow.com/questions/76879872/how-to-use-huggingface-hf-trainer-train-with-custom-collate-function/76929999#76929999 , https://claude.ai/chat/475a4638-cee3-4ce0-af64-c8b8d1dc0d90
         report_to=report_to,  # change to wandb!
         fp16=False,  # never ever set to True
@@ -313,6 +300,39 @@ def train():
         print(f"CUDA_VISIBLE_DEVICES = {cuda_visible_devices}")
     trainer.train()
     trainer.save_model(output_dir=output_dir)  # TODO is this really needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
+
+    # -- Evaluation, NOTE: we are evaluating at the end not during training
+    # - Evaluate model on OpenWebtext
+    print('---- Evaluate model on OpenWebtext')
+    streaming = True
+    max_eval_samples = 2 
+    path, name, split = 'suolyer/pile_openwebtext2', None, 'validation'  # the one sudharsan used
+    eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
+    eval_dataset1 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
+    eval_batch1 = eval_dataset1.take(max_eval_samples)
+    print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
+    eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
+    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch1)
+    eval_hf(trainer)
+    # - Evaluate on C4
+    print('---- Evaluate model on C4')
+    streaming = True
+    max_eval_samples = 2
+    path, name, split = 'c4', 'en', 'validation' 
+    eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
+    eval_dataset2 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
+    eval_batch2 = eval_dataset2.take(max_eval_samples)
+    print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
+    eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
+    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch2)
+    eval_hf(trainer)
+    # - Evluate on whole datasets
+    # print('---- Evaluate model on Whole OpenWebtext')
+    # trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset1)
+    # eval_hf(trainer)
+    # print('---- Evaluate model on Whole C4')
+    # trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset2)
+    # eval_hf(trainer)
     print('Done!\a')
 
 def main():  

@@ -7,6 +7,7 @@ todo:
     - use the re-init code smart ally & brando wrote
 """
 from itertools import chain
+import math
 import random
 
 import torch
@@ -53,6 +54,22 @@ def get_num_steps():
     # dataset_size = sum(dataset.cardinality() for dataset in datasets)
     pass
 
+def raw_dataset_2_lm_data(raw_dataset, 
+                          tokenizer, 
+                          block_size: int, 
+                          desired_dataset_column: str = 'text',
+                          method_to_remove_columns: str = 'keys',
+                          ):
+    remove_columns = get_column_names(raw_dataset, method_to_remove_columns)  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
+    # - Get tokenized train data set
+    # Note: Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
+    tokenize_function = lambda examples: tokenizer(examples[desired_dataset_column])
+    tokenized_train_datasets = raw_dataset.map(tokenize_function, batched=True, remove_columns=remove_columns)
+    _group_texts = lambda examples : group_texts(examples, block_size)
+    # - Get actual data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
+    lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
+    return lm_train_dataset
+
 def get_size_of_seq_len(dataset_or_batch, verbose: bool = True, streaming: bool = True, batch_size: int = 2) -> int:
     """Print size of a sequence length in a batch. Give a hf data set obj (batches are data set objs sometimes)."""
     batch = get_data_from_hf_dataset(dataset_or_batch, streaming=streaming, batch_size=batch_size)
@@ -64,7 +81,7 @@ def get_size_of_seq_len(dataset_or_batch, verbose: bool = True, streaming: bool 
 
 def get_column_names(dataset, 
                     #   split: str = 'train',
-                      method: str = 'features', 
+                      method: str = 'keys', 
                       streaming: bool = True,
                       ):
     if method == 'features':
@@ -240,6 +257,63 @@ def collate_fn_train_only_first_eos_token_mask_everything_after_it(data: list[di
                 assert tokenized_data["labels"][idx, subsequent_eos_position] == -100, "The label for the subsequent_eos_position incorrect! Should be -100."
     return tokenized_data
 
+# -- eval code
+
+def compute_metrics(eval_preds):
+    """ todo document clearly, from SS's code. """
+    import evaluate
+    metric = evaluate.load("accuracy")
+    preds, labels = eval_preds
+    # preds have the same shape as the labels, after the argmax(-1) has been calculated
+    # by preprocess_logits_for_metrics but we need to shift the labels
+    labels = labels[:, 1:].reshape(-1)
+    preds = preds[:, :-1].reshape(-1)
+    return metric.compute(predictions=preds, references=labels)
+
+def whole_eval(model, 
+         path, 
+         name, 
+         split, 
+         tokenizer, 
+         block_size,
+         output_dir,
+         max_eval_samples: int = 1028, 
+         streaming: bool = True,
+         ):
+    """
+    path, name, split = 'suolyer/pile_openwebtext2', None, 'validation'  # the one sudharsan used
+    """
+    eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
+    eval_dataset = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
+    eval_dataset = eval_dataset.take(max_eval_samples)
+
+    print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
+    eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
+
+    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset)
+    metrics = trainer.evaluate()
+    try:
+        perplexity = math.exp(metrics["eval_loss"])
+    except OverflowError:
+        perplexity = float("inf")
+    metrics["perplexity"] = perplexity
+    print(f'Eval metrics: {metrics=}')
+    trainer.log_metrics("eval", metrics)  # display metrics
+    trainer.save_metrics("eval", metrics)
+    return metrics
+
+def eval_hf(trainer):
+    metrics = trainer.evaluate()
+    try:
+        perplexity = math.exp(metrics["eval_loss"])
+    except OverflowError:
+        perplexity = float("inf")
+    metrics["perplexity"] = perplexity
+    print(f'Eval metrics: {metrics=}')
+    trainer.log_metrics("eval", metrics)  # display metrics
+    trainer.save_metrics("eval", metrics)
+    return metrics
+
 # -- unit tests -- #
 
 def _test_all_batches_are_size_block_size():
@@ -301,6 +375,7 @@ def _test_train_dataset_setup_for_main_code():
     # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
     # path, name, data_files, split = ['suolyer/pile_pile-cc'] + ['parquet'] * 4, [None] + ['hacker_news', 'nih_exporter', 'pubmed', 'uspto'], [None] + [urls_hacker_news, urls_nih_exporter, urls_pubmed, urls_uspto], ['validation'] + ['train'] * 4
     # path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
+    # path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
     path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
 
     # -- Get tokenizer and model
