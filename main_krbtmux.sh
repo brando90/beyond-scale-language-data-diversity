@@ -49,7 +49,8 @@ echo CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES
 # python ~/beyond-scale-language-data-diversity/src/diversity/div_coeff.py
 # python ~/beyond-scale-language-data-diversity/src/train/reinit_hf_model.py
 
-python ~/beyond-scale-language-data-diversity/src/training/train.py
+# python ~/beyond-scale-language-data-diversity/src/training/train.py
+python ~/beyond-scale-language-data-diversity/src/training/train_baby_llama2.py
 
 
 # -- other option is to run `echo $SU_PASSWORD | /afs/cs/software/bin/reauth` inside of python, right?
