@@ -40,7 +40,9 @@ reauth
 
 source $AFS/.bashrc
 conda activate beyond_scale
-CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -k2 -nr | head -n 1 | awk -F ', ' '{print $1}')
+export CUDA_VISIBLE_DEVICES=1
+echo CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES
+export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -k2 -nr | head -n 1 | awk -F ', ' '{print $1}')
 echo CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES
 
 # -- Run

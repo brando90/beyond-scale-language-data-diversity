@@ -56,6 +56,7 @@ def train():
     import random
     import math
     import os
+    torch.cuda.empty_cache()
     # buffer_size = 500_000  # can't remember what this was for and doesn't seem to be anywhere
     probabilities = []
     data_mixture_name = None
@@ -72,11 +73,17 @@ def train():
     num_epochs = 1
     num_tokens_trained = None
     num_batches=1
+    optim='paged_adamw_32bit'
+    learning_rate=1e-5
+    warmup_ratio=0.01
+    weight_decay=0.01
+    lr_scheduler_type='constant_with_warmup'
+    # lr_scheduler_kwargs={}
 
     # -- Setup wandb
     import wandb
     # - Dryrun
-    # mode = 'dryrun'; seed = 0; report_to = 'none'
+    mode = 'dryrun'; seed = 0; report_to = 'none'
 
     # - Online (real experiment)
     mode = 'online'; seed = 0; report_to = 'wandb'
@@ -85,8 +92,8 @@ def train():
     # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
     # path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
-    # path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
-    path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
+    path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
+    # path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
     # - models
     # pretrained_model_name_or_path = 'gpt2'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
@@ -96,25 +103,40 @@ def train():
     # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
     pretrained_model_name_or_path = 'baby_llama2_v1'
     # - important training details or it wont run, mem issues maybe
-    # max_steps = 19_073 # <- CHANGE THIS  11 days with baby llama2 v1
-    max_steps = 866 # <- CHANGE THIS
-    L = 4096
+    # max_steps = 19_073 # <- CHANGE THIS  11 days with baby llama2 v1 36m 1, 32
+    # max_steps = 866 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32
+    max_steps = 1_761 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 5, 6 0.2168M tokens
+    # max_steps = 306_000 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32 35.1 tokens
+    max_length = 4096
     num_batches=1
     # single gpu
-    # batch_size, gradient_accumulation_steps = 2, 1  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
-    # batch_size, gradient_accumulation_steps = 2, 16  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
-    # batch_size, gradient_accumulation_steps = 2, 32  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
-    batch_size, gradient_accumulation_steps = 1, 32  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    # batch_size, gradient_accumulation_steps = 1, 32  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    # batch_size, gradient_accumulation_steps = 6, 5  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    # batch_size, gradient_accumulation_steps = 5, 6  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    # batch_size, gradient_accumulation_steps = 4, 6  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    batch_size, gradient_accumulation_steps = 4, 8  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
+    learning_rate=1e-4
+    learning_rate=1e-5
+    # learning_rate=5e-4
+    # learning_rate=1e-6
+    # optim='paged_adamw_32bit'
+    optim = 'adafactor'
+    weight_decay=0.1
+    warmup_ratio=0.01
+    # lr_scheduler_type='cosine'
+    # lr_scheduler_type='constant_with_warmup'
+    # lr_scheduler_type='cosine_with_warmup'
+    # lr_scheduler_kwargs={},  # ref: https://huggingface.co/docs/transformers/v4.37.0/en/main_classes/optimizer_schedules#transformers.SchedulerType 
     # -- multiple gpus 3 4096 context len
     # batch_size, gradient_accumulation_steps = 4, 8  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
     # gradient_checkpointing = False
     gradient_checkpointing = True
     print(f'{batch_size=} {gradient_accumulation_steps=} {gradient_checkpointing=} {num_epochs=}')
     # -- wandb
-    num_tokens_trained = max_steps * batch_size * L * num_batches 
+    num_tokens_trained = max_steps * batch_size * max_length * num_batches 
     today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
     # run_name = f'{path} div_coeff_{num_batches=} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=})'
-    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=})'
+    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=})'
     print(f'\n---> {run_name=}\n')
 
     # - Init wandb
@@ -194,13 +216,13 @@ def train():
         print(f'{max_length=}')
     elif 'baby_llama2_v1' in pretrained_model_name_or_path:
         model = get_deafult_smallest_baby_llama2_v1_36m_0p036b()
-        reinitialize_weights_gpt_neox_20B_inspired_4_llama2(model, L=4096)
+        reinitialize_weights_gpt_neox_20B_inspired_4_llama2(model, L=max_length)
         tokenizer = AutoTokenizer.from_pretrained('meta-llama/Llama-2-7b-hf', padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
         device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
         torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
         model = model.to(torch_dtype)
-        block_size: int = 4096
+        block_size: int = max_length
     print("Number of parameters:", sum(p.numel() for p in model.parameters()))
     print(f"Total weight norm: {get_weight_norms(model)=}")
     print(f'{torch.cuda.device_count()=} (makes sure GPUs are visible and accesible to Pytorch.)')
@@ -245,21 +267,24 @@ def train():
         per_device_train_batch_size=per_device_train_batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,  # based on alpaca https://github.com/tatsu-lab/stanford_alpaca, allows to process effective_batch_size = gradient_accumulation_steps * batch_size, num its to accumulate before opt update step
         gradient_checkpointing = gradient_checkpointing,  # TODO depending on hardware set to true?
-        optim="paged_adamw_32bit",  # David hall says to keep 32bit opt https://arxiv.org/pdf/2112.11446.pdf TODO: if we are using brain float 16 bf16 should we be using 32 bit? are optimizers always fb32?  https://discuss.huggingface.co/t/is-there-a-paged-adamw-16bf-opim-option/51284
-        warmup_steps=500,  # TODO: once real training starts we can select this number for llama v2, what does llama v2 do to make it stable while v1 didn't?
-        warmup_ratio=0.03,  # copying alpaca for now, number of steps for a linear warmup, TODO once real training starts change? 
+        optim=optim,
+        warmup_steps=int(max_steps*warmup_ratio),  # TODO: once real training starts we can select this number for llama v2, what does llama v2 do to make it stable while v1 didn't?
+        # warmup_ratio=warmup_ratio,  # copying alpaca for now, number of steps for a linear warmup, TODO once real training starts change? 
         # weight_decay=0.01,  # TODO once real training change?
-        weight_decay=0.00,  # TODO once real training change?
-        learning_rate = 1e-5,  # TODO once real training change? anything larger than -3 I've had terrible experiences with
+        weight_decay=weight_decay,  # TODO once real training change?
+        learning_rate = learning_rate,  # TODO once real training change? anything larger than -3 I've had terrible experiences with
         max_grad_norm=1.0, # TODO once real training change?
-        lr_scheduler_type="cosine",  # TODO once real training change? using what I've seen most in vision 
+        lr_scheduler_type=lr_scheduler_type,  # TODO once real training change? using what I've seen most in vision 
+        # lr_scheduler_kwargs=lr_scheduler_kwargs,  # ref: https://huggingface.co/docs/transformers/v4.37.0/en/main_classes/optimizer_schedules#transformers.SchedulerType 
         logging_dir=Path('~/data/maf/logs').expanduser(),
         # save_steps=4000,  # alpaca does 2000, other defaults were 500
         save_steps=max_steps//3,  # alpaca does 2000, other defaults were 500
         # save_steps=1,  # alpaca does 2000, other defaults were 500
         # logging_steps=250,
-        logging_steps=50,  
-        # logging_steps=1,
+        # logging_steps=50,  
+        logging_first_step=True,
+        # logging_steps=3,
+        logging_steps=1,
         remove_unused_columns=False,  # TODO don't get why https://stackoverflow.com/questions/76879872/how-to-use-huggingface-hf-trainer-train-with-custom-collate-function/76929999#76929999 , https://claude.ai/chat/475a4638-cee3-4ce0-af64-c8b8d1dc0d90
         report_to=report_to,  # change to wandb!
         fp16=False,  # never ever set to True
@@ -269,7 +294,7 @@ def train():
         # eval_accumulation_steps=eval_accumulation_steps,
         # eval_steps=eval_steps,
     )
-    print(f'{pretrained_model_name_or_path=}')
+    print(f'{pretrained_model_name_or_path=}\n{optim=}\n{learning_rate=}')
 
     # TODO: might be nice to figure our how llamav2 counts the number of token's they've trained on
     print(f'{train_dataset=}')
@@ -331,11 +356,11 @@ def train():
     trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch2)
     eval_hf(trainer)
     # - Evluate on whole datasets
-    # print('---- Evaluate model on Whole OpenWebtext')
-    # trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset1)
-    # eval_hf(trainer)
-    # print('---- Evaluate model on Whole C4')
-    # trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset2)
+    print('---- Evaluate model on Whole OpenWebtext')
+    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset1)
+    eval_hf(trainer)
+    print('---- Evaluate model on Whole C4')
+    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset2)
     # eval_hf(trainer)
     print('Done!\a')
 

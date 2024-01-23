@@ -206,6 +206,8 @@ def group_texts_v2(examples, # if batched=True it's a dict of input_ids, attenti
     # https://huggingface.co/docs/datasets/package_reference/main_classes.html#datasets.Dataset.map    
     """
     # Concatenate all texts for each key in the examples e.g., it creates one concatenated list of all input_ids, one for all attention_mask, etc.
+    # for column_name in examples.keys():
+    #     # chain makes an iterator that returns elements from each iterator in order, basically concatenates iterators 
     concatenated_examples = {k: list(chain(*examples[k])) for k in examples.keys()}
     total_length = len(concatenated_examples[list(examples.keys())[0]])
     # We drop the small remainder, and if the total_length < block_size  we exclude this batch and return an empty dict.

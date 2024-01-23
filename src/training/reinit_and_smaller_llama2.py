@@ -285,11 +285,11 @@ def get_smaller_llama2(hidden_size : int = 2048,
     if reinit:
         reinitialize_weights_gpt_neox_20B_inspired_4_llama2(smaller_model, L=L)
     # NOTE: putting torch_dtype in the config doesn't work, so you have to move the model to bfloat16 later with model.to(torch.bfloat16)
-    torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
-    device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
-    smaller_model = smaller_model.to(device)
-    smaller_model = smaller_model.to(torch_dtype)
-    print(f'Model is currently on: {next(iter(smaller_model.parameters())).dtype=}')
+    # torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
+    # device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
+    # smaller_model = smaller_model.to(device)
+    # smaller_model = smaller_model.to(torch_dtype)
+    # print(f'Model is currently on: {next(iter(smaller_model.parameters())).dtype=}')
     if verbose:
         print(f'config: {config}')
         print("Smaller number of parameters:", sum(p.numel() for p in smaller_model.parameters()))
