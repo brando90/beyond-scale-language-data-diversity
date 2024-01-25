@@ -81,7 +81,6 @@ def train():
     mode = 'online'; seed = 0; report_to = 'wandb'
 
     # - train data sets
-    # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
     # path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
     path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
@@ -129,8 +128,7 @@ def train():
     # -- wandb
     num_tokens_trained = max_steps * batch_size * max_length * num_batches 
     today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
-    # run_name = f'{path} div_coeff_{num_batches=} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=})'
-    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=})'
+    run_name = f'beyond scale: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=})'
     print(f'\n---> {run_name=}\n')
 
     # - Init wandb

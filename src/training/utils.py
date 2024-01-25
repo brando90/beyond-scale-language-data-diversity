@@ -9,6 +9,7 @@ todo:
 from itertools import chain
 import math
 import random
+from typing import Optional
 
 import torch
 
@@ -17,6 +18,29 @@ from datasets import load_dataset, interleave_datasets
 
 from transformers import PreTrainedTokenizer, AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, AutoConfig
 from transformers.testing_utils import CaptureLogger
+from transformers import GPT2Tokenizer
+
+def get_actual_data_batch(data_set_or_batch):
+    """ Returns the actual  data batch from the HF dataset obj e.g., dataset, batch etc. """
+    data_batch = next(iter(data_set_or_batch))
+    return data_batch
+
+def get_vocab_size_and_ln(tokenizer: GPT2Tokenizer) -> tuple[int, float]:
+    """
+    Calculate the vocabulary size and its natural logarithm for a given tokenizer.
+
+    Note:
+        Sanity check -- is loss random? lnV = -ln(1/V) = -ln(1/50257) = 10.82 since CE = avg_i v_i * ln(1/p_i) but only one token is right so vi = 1 for some i so CE = ln(1/p_i)
+
+    Args:
+    tokenizer (GPT2Tokenizer): A tokenizer from the Hugging Face library.
+
+    Returns:
+    tuple[int, float]: A tuple containing the vocabulary size and its natural logarithm.
+    """
+    vocab_size = len(tokenizer)  # Get the size of the tokenizer's vocabulary
+    ln_vocab_size = math.log(vocab_size)  # Calculate the natural logarithm of the vocabulary size
+    return vocab_size, ln_vocab_size
 
 def num_tokens(max_steps: int, batch_size: int, L: int, num_batches: int) -> int:
     """
@@ -78,8 +102,8 @@ def raw_dataset_2_lm_data(raw_dataset,
     tokenized_train_datasets = raw_dataset.map(tokenize_function, batched=True, remove_columns=remove_columns)
     _group_texts = lambda examples : group_texts(examples, block_size)
     # - Get actual data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
-    lm_train_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
-    return lm_train_dataset
+    lm_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
+    return lm_dataset
 
 def get_size_of_seq_len(dataset_or_batch, verbose: bool = True, streaming: bool = True, batch_size: int = 2) -> int:
     """Print size of a sequence length in a batch. Give a hf data set obj (batches are data set objs sometimes)."""
@@ -109,9 +133,9 @@ def get_column_names(dataset,
 def get_data_from_hf_dataset(dataset, 
                              streaming: bool = True, 
                              batch_size: int = 4, 
-                             shuffle: bool= False, # shuffle is better but slower afaik
-                             seed: int = 0, 
-                             buffer_size: int = 500_000,
+                            #  shuffle: bool= False, # shuffle is better but slower afaik
+                            #  seed: int = 0, 
+                            #  buffer_size: int = 500_000,
                              ):
     """ Gets data from a HF dataset, it's usually an iterator object e.g., some ds.map(fn, batched=True, remove_columns=remove_columns) has been applied. 
     Handles both streaming and non-streaming datasets, take for streaming and select for non-streaming.
@@ -162,6 +186,13 @@ def group_texts(examples, # if batched=True it's a dict of input_ids, attention_
     tokenize_function = lambda examples: tokenize_function(examples, tokenizer=tokenizer) 
     tokenized_datasets = raw_datasets.map(tokenize_function, batched=True, remove_columns=column_names)
 
+    if used as above then examples is
+    examples = {'input_ids': [[...], [...], ...], 'attention_mask': [[...], [...], ...], 'labels': [[...], [...], ...]]]}
+    examples.keys() = dict_keys(['input_ids', 'attention_mask'])
+    type(examples) = <class 'dict'>
+    type(examples['input_ids']) = <class 'list'>
+    len(examples['input_ids']) = 1000  # if batched=True
+
     # Note that with `batched=True`, this map processes 1,000 texts together, so group_texts throws away a remainder
     # for each of those groups of 1,000 texts. You can adjust that batch_size here but a higher value might be slower
     # to preprocess.
@@ -174,7 +205,7 @@ def group_texts(examples, # if batched=True it's a dict of input_ids, attention_
     total_length = len(concatenated_examples[list(examples.keys())[0]])
     # We drop the small remainder, and if the total_length < block_size  we exclude this batch and return an empty dict.
     # We could add padding if the model supported it instead of this drop, you can customize this part to your needs.
-    total_length = (total_length // block_size) * block_size
+    total_length = (total_length // block_size) * block_size  # rounds down
     # Split by chunks of max_len.
     result = {
         k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
@@ -218,6 +249,17 @@ def group_texts_v2(examples, # if batched=True it's a dict of input_ids, attenti
         k: [t[i : i + block_size] for i in range(0, total_length, block_size)]
         for k, t in concatenated_examples.items()
     }
+    # # get sequences of length block_size, then add eos token to end of each sequence and mask the rest of the sequence
+    # result = {}
+    # for k, t in concatenated_examples.items():
+    #     # Initialize a list for each key (really key="text" is the one we care about) in the result
+    #     result[k] = []
+    #     total_length = len(t)  # Assuming t is a list or has a length
+    #     for i in range(0, total_length, block_size):
+    #         # Append the sublist of t from i to i + block_size
+    #         seq = t[i : i + block_size]
+
+    #         result[k].append(t[i : i + block_size])
     result["labels"] = result["input_ids"].copy()
     return result
 
@@ -325,6 +367,21 @@ def eval_hf(trainer):
     print(f'Eval metrics: {metrics=}')
     trainer.log_metrics("eval", metrics)  # display metrics
     trainer.save_metrics("eval", metrics)
+    return metrics
+
+def eval_hf_with_subsample(path, name, split, model, tokenizer, block_size, output_dir, max_eval_samples: int = 1024, streaming: bool = True, print_str: Optional[str] = None):
+    eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
+    eval_dataset2 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
+    if max_eval_samples is None:
+        eval_batch2 = eval_dataset2 
+    else:
+        eval_batch2 = eval_dataset2.take(max_eval_samples)
+    print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
+    eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
+    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch2)
+    metrics = eval_hf(trainer)
+    if print_str is not None:
+        print(print_str)
     return metrics
 
 # -- unit tests -- #
@@ -460,10 +517,27 @@ def _test_expt_planning():
     print(f'{max_steps=}')
     # 42
 
+def _test_utils_padding_and_eos():
+    # GPT2 tokenizer
+    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    block_size = 1024
+    print(f'{tokenizer.model_max_length=}')
+    print(f'{block_size=}')
+    raw_dataset = load_dataset("c4", "en", streaming=True, split="train").with_format("torch")
+    lm_dataset = raw_dataset_2_lm_data(raw_dataset, tokenizer, block_size=block_size)
+    # take a batch of size 2 and print it
+    batch = get_data_from_hf_dataset(lm_dataset, streaming=True, batch_size=2) 
+    print(f'{batch=}')
+    data_batch = next(iter(batch))
+    # todo: test that when length changes attention mask labels etc make sense
+    # todo: do we need to put eos & padding and make sure label = -1? 
+    print()
+
 if __name__ == "__main__":
     from time import time
     start_time = time()
     # _test_all_batches_are_size_block_size()
     # _test_train_dataset_setup_for_main_code()
-    _test_expt_planning()
+    # _test_expt_planning()
+    _test_utils_padding_and_eos()
     print(f"Done!\a Total time: {time() - start_time} seconds, or {(time() - start_time)/60} minutes. or {(time() - start_time)/60/60} hours.\a")

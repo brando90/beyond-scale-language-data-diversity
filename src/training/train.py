@@ -34,7 +34,7 @@ import math
 import sys
 from training.reinit_and_smaller_llama2 import get_deafult_smallest_baby_llama2_v1_36m_0p036b, get_weight_norms, reinitialize_weights_gpt_neox_20B_inspired_4_llama2
 sys.path = [''] + sys.path
-from training.utils import eval_hf, get_column_names, get_data_from_hf_dataset, group_texts, raw_dataset_2_lm_data
+from training.utils import eval_hf, eval_hf_with_subsample, get_column_names, get_data_from_hf_dataset, group_texts, raw_dataset_2_lm_data
 
 # -- Experiments 
 
@@ -86,16 +86,15 @@ def train():
     mode = 'dryrun'; seed = 0; report_to = 'none'
 
     # - Online (real experiment)
-    mode = 'online'; seed = 0; report_to = 'wandb'
+    # mode = 'online'; seed = 0; report_to = 'wandb'
 
     # - train data sets
-    # path, name, data_files, split = ['csv'], [None], [os.path.expanduser('~/data/maf_data/maf_textbooks_csv_v1/train.csv')], ['train']
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
     # path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
     path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
     # path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
     # - models
-    # pretrained_model_name_or_path = 'gpt2'
+    # pretrained_model_name_or_path = 'gpt2'  # this is the smallest model gpt2, 124M params https://huggingface.co/gpt2 
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-chat-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-13b-hf'
@@ -103,11 +102,14 @@ def train():
     # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
     pretrained_model_name_or_path = 'baby_llama2_v1'
     # - important training details or it wont run, mem issues maybe
+    max_steps = 1
+    # max_steps = 300
     # max_steps = 19_073 # <- CHANGE THIS  11 days with baby llama2 v1 36m 1, 32
     # max_steps = 866 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32
-    max_steps = 1_761 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 5, 6 0.2168M tokens
+    # max_steps = 1_761 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 5, 6 0.2168M tokens
     # max_steps = 306_000 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32 35.1 tokens
-    max_length = 4096
+    # max_length = 4096
+    max_length = 1024
     num_batches=1
     # single gpu
     # batch_size, gradient_accumulation_steps = 1, 32  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
@@ -116,14 +118,12 @@ def train():
     # batch_size, gradient_accumulation_steps = 4, 6  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
     batch_size, gradient_accumulation_steps = 4, 8  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
     learning_rate=1e-4
-    learning_rate=1e-5
-    # learning_rate=5e-4
-    # learning_rate=1e-6
-    # optim='paged_adamw_32bit'
-    optim = 'adafactor'
+    # learning_rate=1e-5
+    optim='paged_adamw_32bit'
+    # optim = 'adafactor'
     weight_decay=0.1
     warmup_ratio=0.01
-    # lr_scheduler_type='cosine'
+    lr_scheduler_type='cosine'
     # lr_scheduler_type='constant_with_warmup'
     # lr_scheduler_type='cosine_with_warmup'
     # lr_scheduler_kwargs={},  # ref: https://huggingface.co/docs/transformers/v4.37.0/en/main_classes/optimizer_schedules#transformers.SchedulerType 
@@ -135,14 +135,12 @@ def train():
     # -- wandb
     num_tokens_trained = max_steps * batch_size * max_length * num_batches 
     today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
-    # run_name = f'{path} div_coeff_{num_batches=} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=})'
-    run_name = f'training maths: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=})'
+    run_name = f'beyond scale: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=})'
     print(f'\n---> {run_name=}\n')
 
     # - Init wandb
     debug: bool = mode == 'dryrun'  # BOOL, debug?
     run = wandb.init(mode=mode, project="beyond-scale", name=run_name, save_code=True)
-    # wandb.config.update({"num_batches": num_batches, "path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path})
     wandb.config.update({"path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path, 'num_epochs': num_epochs, 'gradient_accumulation_steps': gradient_accumulation_steps})
     # run.notify_on_failure() # https://community.wandb.ai/t/how-do-i-set-the-wandb-alert-programatically-for-my-current-run/4891
     print(f'{debug=}')
@@ -157,11 +155,13 @@ def train():
             tokenizer.pad_token = tokenizer.eos_token
             print(f'{tokenizer.pad_token=}')
         print(f'{tokenizer.eos_token=}')
-        print(f'{ tokenizer.eos_token_id=}')
+        print(f'{tokenizer.eos_token_id=}')
         model = GPT2LMHeadModel.from_pretrained(pretrained_model_name_or_path)
         device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
         model = model.to(device)
         block_size: int = tokenizer.model_max_length
+        print(f'{block_size=}')
+        print()
     elif 'Llama-2' in pretrained_model_name_or_path or 'Mistral' in pretrained_model_name_or_path:
         # - llama2
         from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer
@@ -176,17 +176,6 @@ def train():
             torch_dtype=torch_dtype,
             use_auth_token=True,
         )
-        # HF trainer load to gpu on it's own: https://claude.ai/chat/43796e10-2139-4668-ac5c-aafeeeeeba2e
-        # # -- Detect if running with accelerate https://claude.ai/chat/43796e10-2139-4668-ac5c-aafeeeeeba2e
-        # from accelerate import Accelerator
-        # accelerator = Accelerator()
-        # # self.is_deepspeed_enabled = getattr(accelerator.state, "deepspeed_plugin", None) is not None
-        # is_fsdp_enabled = getattr(accelerator.state, "fsdp_plugin", None) is not None
-        # if not is_fsdp_enabled: # not sure if this is needed but its for sure safer
-        #     # maybe figuring out how to run everything with accelerate would fix things...
-        #     # ref: https://stackoverflow.com/questions/77204403/does-one-need-to-load-the-model-to-gpu-before-calling-train-when-using-accelerat
-        #     device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
-        #     model = model.to(device)
         # https://github.com/artidoro/qlora/blob/7f4e95a68dc076bea9b3a413d2b512eca6d004e5/qlora.py#L347C13-L347C13
         tokenizer = AutoTokenizer.from_pretrained(
             pretrained_model_name_or_path,
@@ -228,11 +217,14 @@ def train():
     print(f'{torch.cuda.device_count()=} (makes sure GPUs are visible and accesible to Pytorch.)')
     print(f'Model is currently on: {next(iter(model.parameters())).device=}')
     print(f'Model is currently on: {next(iter(model.parameters())).dtype=}')
+    # Sanity check -- is loss random? lnV = -ln(1/V) = -ln(1/50257) = 10.82 since CE = avg_i v_i * ln(1/p_i) but only one token is right so vi = 1 for some i so CE = ln(1/p_i)
+    print(f'vocab_size: {len(tokenizer)=} \nExpected random loss: {math.log(len(tokenizer))=}')
+    eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=2, print_str='> Eval OpenWebtext rand mdl')
+    eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=2, print_str='> Eval C4 rand mdl')
     
     # --- Load datasets
     # -- Get train data set
     # - Load interleaved combined datasets
-    # train_datasets = [load_dataset(path, name, streaming=True, split="train").with_format("torch") for path, name in zip(path, name)]
     train_datasets = [load_dataset(path, name, data_files=data_file, streaming=streaming, split=split).with_format("torch") for path, name, data_file, split in zip(path, name, data_files, split)]
     probabilities = [1.0/len(train_datasets) for _ in train_datasets]  
     # - Get raw train data set
@@ -257,19 +249,17 @@ def train():
 
     # -- Training arguments and trainer instantiation ref: https://huggingface.co/docs/transformers/v4.31.0/en/main_classes/trainer#transformers.TrainingArguments
     output_dir = Path(f'~/data/results_{today}/').expanduser() if not debug else Path(f'~/data/results/').expanduser()
-    # output_dir = '.'
-    # print(f'{debug=} {output_dir=} \n {report_to=}')
+    print(f'{output_dir=}')
     training_args = TrainingArguments(
         output_dir=output_dir,  # The output directory where the model predictions and checkpoints will be written.
         # output_dir='.',  # The output directory where the model predictions and checkpoints will be written.
-        # num_train_epochs = num_train_epochs, 
         max_steps=max_steps,  # TODO: hard to fix, see above
         per_device_train_batch_size=per_device_train_batch_size,
         gradient_accumulation_steps=gradient_accumulation_steps,  # based on alpaca https://github.com/tatsu-lab/stanford_alpaca, allows to process effective_batch_size = gradient_accumulation_steps * batch_size, num its to accumulate before opt update step
         gradient_checkpointing = gradient_checkpointing,  # TODO depending on hardware set to true?
         optim=optim,
-        warmup_steps=int(max_steps*warmup_ratio),  # TODO: once real training starts we can select this number for llama v2, what does llama v2 do to make it stable while v1 didn't?
-        # warmup_ratio=warmup_ratio,  # copying alpaca for now, number of steps for a linear warmup, TODO once real training starts change? 
+        # warmup_steps=int(max_steps*warmup_ratio),  # TODO: once real training starts we can select this number for llama v2, what does llama v2 do to make it stable while v1 didn't?
+        warmup_ratio=warmup_ratio,  # copying alpaca for now, number of steps for a linear warmup, TODO once real training starts change? 
         # weight_decay=0.01,  # TODO once real training change?
         weight_decay=weight_decay,  # TODO once real training change?
         learning_rate = learning_rate,  # TODO once real training change? anything larger than -3 I've had terrible experiences with
@@ -289,39 +279,16 @@ def train():
         report_to=report_to,  # change to wandb!
         fp16=False,  # never ever set to True
         bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8,  # if >= 8 ==> brain float 16 available or set to True if you always want fp32
-        # evaluation_strategy='steps',
-        # per_device_eval_batch_size=per_device_eval_batch_size,
-        # eval_accumulation_steps=eval_accumulation_steps,
-        # eval_steps=eval_steps,
     )
     print(f'{pretrained_model_name_or_path=}\n{optim=}\n{learning_rate=}')
 
-    # TODO: might be nice to figure our how llamav2 counts the number of token's they've trained on
+    # -- Init Trainer
     print(f'{train_dataset=}')
-    # print(f'{eval_dataset=}')
     trainer = Trainer(
         model=model,
         args=training_args,  
         train_dataset=train_dataset,
-        # eval_dataset=eval_dataset,
-        # data_collator=lambda data: custom_collate_fn(data, tokenizer=tokenizer)
     )
-    # - TODO bellow is for qlora from falcon, has same interface as Trainer later lets use: https://github.com/artidoro/qlora
-    # from trl import SFTTrainer
-    # peft_config = None
-    # trainer = SFTTrainer(
-    #     model=model,
-    #     train_dataset=trainset,
-    #     peft_config=peft_config,
-    #     dataset_text_field="text",
-    #     max_seq_length=max_seq_length,
-    #     tokenizer=tokenizer,
-    #     args=training_arguments,
-    # )
-    # TODO why this? https://discuss.huggingface.co/t/why-do-you-need-to-re-upcast-the-norm-layers-of-hf-falcon-to-fb32/46139
-    # for name, module in trainer.model.named_modules():
-    #     if "norm" in name:
-    #         module = module.to(torch.float32)
 
     # - Train
     cuda_visible_devices = os.environ.get('CUDA_VISIBLE_DEVICES')
@@ -331,37 +298,24 @@ def train():
     trainer.save_model(output_dir=output_dir)  # TODO is this really needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
 
     # -- Evaluation, NOTE: we are evaluating at the end not during training
+    print()
     # - Evaluate model on OpenWebtext
     print('---- Evaluate model on OpenWebtext')
-    streaming = True
-    max_eval_samples = 1024
-    path, name, split = 'suolyer/pile_openwebtext2', None, 'validation'  # the one sudharsan used
-    eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
-    eval_dataset1 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
-    eval_batch1 = eval_dataset1.take(max_eval_samples)
-    print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
-    eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
-    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch1)
-    eval_hf(trainer)
+    metrics = eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir)
+    print(f'{metrics=}')
     # - Evaluate on C4
     print('---- Evaluate model on C4')
-    streaming = True
-    max_eval_samples = 1024
-    path, name, split = 'c4', 'en', 'validation' 
-    eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
-    eval_dataset2 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
-    eval_batch2 = eval_dataset2.take(max_eval_samples)
-    print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
-    eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
-    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch2)
-    eval_hf(trainer)
+    metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir)
+    print(f'{metrics=}')
     # - Evluate on whole datasets
     print('---- Evaluate model on Whole OpenWebtext')
-    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset1)
-    eval_hf(trainer)
+    metrics = eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
+    # eval_hf(trainer=Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset1))
+    print(f'{metrics=}')
     print('---- Evaluate model on Whole C4')
-    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset2)
-    # eval_hf(trainer)
+    metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
+    # eval_hf(trainer=Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset2))
+    print(f'{metrics=}')
     print('Done!\a')
 
 def main():  
