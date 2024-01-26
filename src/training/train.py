@@ -90,8 +90,8 @@ def train():
 
     # - train data sets
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
-    # path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
-    path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
+    path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
+    # path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
     # path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
     # - models
     # pretrained_model_name_or_path = 'gpt2'  # this is the smallest model gpt2, 124M params https://huggingface.co/gpt2 
