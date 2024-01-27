@@ -20,6 +20,33 @@ from transformers import PreTrainedTokenizer, AutoTokenizer, AutoModelForCausalL
 from transformers.testing_utils import CaptureLogger
 from transformers import GPT2Tokenizer
 
+def cuda_debug():
+    import torch
+
+    # Check if CUDA is available
+    cuda_available = torch.cuda.is_available()
+    print(f"CUDA available: {cuda_available}")
+
+    # Get the CUDA version used by PyTorch
+    cuda_version = torch.version.cuda
+    print(f"CUDA version: {cuda_version}")
+
+    # Get the number of CUDA devices (GPUs)
+    num_cuda_devices = torch.cuda.device_count()
+    print(f"Number of CUDA devices: {num_cuda_devices}")
+
+# # For each CUDA device, print its name and capabilities
+# for i in range(num_cuda_devices):
+#     print(f"CUDA Device {i}: {torch.cuda.get_device_name(i)}")
+#     print(f"Compute Capability: {torch.cuda.get_device_capability(i)}")
+
+
+def do_quick_matrix_multiply():
+    """
+python -c "import torch; print(torch.randn(2, 4).to('cuda') @ torch.randn(4, 1).to('cuda'));"
+    """
+    print(torch.randn(2, 4).to('cuda') @ torch.randn(4, 1).to('cuda'))
+
 def get_actual_data_batch(data_set_or_batch):
     """ Returns the actual  data batch from the HF dataset obj e.g., dataset, batch etc. """
     data_batch = next(iter(data_set_or_batch))

@@ -260,7 +260,7 @@ def get_deafult_smallest_baby_llama2_v2_109m_0p109(verbose: bool = False, reinit
     """
     return get_smaller_llama2(hidden_size=32*3, num_hidden_layers=32, verbose=verbose, reinit=reinit)
 
-def get_full_llama7b(gpu_idx: int = -1):
+def get_full_llama7b_reinit(L: int, gpu_idx: int = -1, reinit_type: str = 'reinitialize_weights_gpt_neox_20B_inspired_4_llama2'):
     config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf", torch_dtype="auto")
     model = AutoModelForCausalLM.from_config(config)
     # model = AutoModelForCausalLM.from_pretrained("meta-llama/Llama-2-7b-hf", trust_remote_code=True, torch_dtype=torch.bfloat16, use_auth_token=True,)
@@ -269,6 +269,8 @@ def get_full_llama7b(gpu_idx: int = -1):
         model = model.to(device)
         torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
         model = model.to(torch_dtype)
+    if reinit_type == 'reinitialize_weights_gpt_neox_20B_inspired_4_llama2':
+        reinitialize_weights_gpt_neox_20B_inspired_4_llama2(model, L=L)
     return model
 
 def get_smaller_llama2(hidden_size : int = 2048, 
@@ -301,6 +303,14 @@ def get_smaller_llama2(hidden_size : int = 2048,
         return smaller_model, tokenizer
     return smaller_model
 
+# ---- Baby Llama v2 lets fix it with efficient net
+
+def get_baby_llamav2_36m(verbose: bool = False, reinit: bool = True):
+    # return get_smaller_llama2(hidden_size=32, num_hidden_layers=32, verbose=verbose, reinit=reinit)
+    raise NotImplemented
+
+# ---- Tests
+
 # def _test_generate_smaller_model():
 #     """
 #     ref: https://stackoverflow.com/questions/76971761/how-to-adapt-llama-v2-model-to-less-than-7b-parameters
@@ -331,9 +341,9 @@ export CUDA_VISIBLE_DEVICES=6
     
     # - Get smaller llama2 model
     # model = get_deafult_smallest_llama2()
-    model = get_deafult_smallest_baby_llama2_v1_36m_0p036b()
+    # model = get_deafult_smallest_baby_llama2_v1_36m_0p036b()
     # model = get_deafult_smallest_baby_llama2_v2()
-    # model = get_full_llama7b()
+    # model = get_full_llama7b_reinit(L=4096)
     device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
     # - sanity checks
