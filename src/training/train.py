@@ -314,20 +314,20 @@ def train():
     # - Evaluate model on OpenWebtext
     print('---- Evaluate model on OpenWebtext')
     metrics = eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=4)
-    print(f'{metrics=}')
+    print(f'OpenWebtext: {metrics=}')
     # - Evaluate on C4
     print('---- Evaluate model on C4')
     metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=4)
-    print(f'{metrics=}')
+    print(f'C4: {metrics=}')
     # - Evluate on whole datasets
     print('---- Evaluate model on Whole OpenWebtext')
     metrics = eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
     # eval_hf(trainer=Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset1))
-    print(f'{metrics=}')
+    print(f'OpenWebtext: {metrics=}')
     print('---- Evaluate model on Whole C4')
     metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
     # eval_hf(trainer=Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset2))
-    print(f'{metrics=}')
+    print(f'C4: {metrics=}')
     print('Done!\a')
 
 def main():  
