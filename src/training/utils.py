@@ -384,7 +384,7 @@ def whole_eval(model,
     trainer.save_metrics("eval", metrics)
     return metrics
 
-def eval_hf(trainer):
+def eval_hf(trainer: Trainer, path, name, split,):
     metrics = trainer.evaluate()
     try:
         perplexity = math.exp(metrics["eval_loss"])
@@ -392,11 +392,16 @@ def eval_hf(trainer):
         perplexity = float("inf")
     metrics["perplexity"] = perplexity
     print(f'Eval metrics: {metrics=}')
-    trainer.log_metrics("eval", metrics)  # display metrics
-    trainer.save_metrics("eval", metrics)
+    trainer.log_metrics(f"eval_{path}_{name}_{split}", metrics)  # display metrics
+    trainer.save_metrics(f"eval_{path}_{name}_{split}", metrics)
     return metrics
 
-def eval_hf_with_subsample(path, name, split, model, tokenizer, block_size, output_dir, max_eval_samples: int = 1024, streaming: bool = True, print_str: Optional[str] = None):
+def eval_hf_with_subsample(path, name, split, model, tokenizer, block_size, output_dir, 
+                           max_eval_samples: int = 1024,
+                           streaming: bool = True, 
+                           verbose: bool = True,
+                           print_str: Optional[str] = None,
+                           ):
     eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
     eval_dataset2 = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
     if max_eval_samples is None:
@@ -406,7 +411,9 @@ def eval_hf_with_subsample(path, name, split, model, tokenizer, block_size, outp
     print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
     eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
     trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch2)
-    metrics = eval_hf(trainer)
+    metrics = eval_hf(trainer, path, name, split,)
+    if verbose:
+        print(f'----> {path=}, {name=}, {split=}, {metrics=}')
     if print_str is not None:
         print(print_str)
     return metrics
@@ -560,11 +567,26 @@ def _test_utils_padding_and_eos():
     # todo: do we need to put eos & padding and make sure label = -1? 
     print()
 
+def _test_log_trainer():
+    # gpt2 model
+    model = AutoModelForCausalLM.from_pretrained("gpt2")
+    model = model.to("cuda")
+    raw_dataset = load_dataset("c4", "en", streaming=True, split="train").with_format("torch")
+    eval_dataset = raw_dataset.take(2)
+    name = 'c4_fake'
+    eval_args = TrainingArguments(output_dir='.') 
+    metrics = {'eval_loss': 0.1, 'eval_runtime': 0.1, 
+               'eval_samples_per_second': 0.1, 'eval_steps_per_second': 0.1, 'perplexity': 0.1, 'name': name}
+    # trainer.save_metrics(f"eval_{name}", metrics)
+    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset)
+    trainer.log_metrics(f"eval_{name}", metrics)  # display metrics
+
 if __name__ == "__main__":
     from time import time
     start_time = time()
     # _test_all_batches_are_size_block_size()
     # _test_train_dataset_setup_for_main_code()
     # _test_expt_planning()
-    _test_utils_padding_and_eos()
+    # _test_utils_padding_and_eos()
+    _test_log_trainer()
     print(f"Done!\a Total time: {time() - start_time} seconds, or {(time() - start_time)/60} minutes. or {(time() - start_time)/60/60} hours.\a")

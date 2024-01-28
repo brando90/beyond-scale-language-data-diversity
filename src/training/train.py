@@ -86,7 +86,7 @@ def train():
     mode = 'dryrun'; seed = 0; report_to = 'none'
 
     # - Online (real experiment)
-    mode = 'online'; seed = 0; report_to = 'wandb'
+    # mode = 'online'; seed = 0; report_to = 'wandb'
 
     # - train data sets
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
@@ -106,14 +106,18 @@ def train():
     max_steps = 2
     # max_steps = 300
     # max_steps = 866 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32
-    # max_steps = 1_553  # 13.5hs llama2 full reinit 4*8=32 b 1024 L
-    max_steps = 61_036  # 3.8 days for B=32 L=512 rate=5.43secs/it
+    # max_steps = 1_553  # 13.5hs llama2 full reinit 4*8=32=B 1024=L for 6.3M tokens
+    # max_steps = 5_000
+    # max_steps = 61_036  # 3.8 days for B=32 L=512 rate=5.43secs/it for 1B=1e9tokens
+    # max_steps = 78_853 # 4.6 days L=512 B=32 r=5.43 ~1.21B 29,999MiB
+    # max_steps = 30_517  # 11 days 1B L=512 B=32 r=31.31
     # max_steps = 1_761 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 5, 6 0.2168M tokens
     # max_steps = 19_073 # <- CHANGE THIS  11 days with baby llama2 v1 36m 1, 32
     # max_steps = 306_000 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32 35.1 tokens
     # max_length = 4096
-    # max_length = 1024
-    max_length = 512
+    max_length = 1024
+    # max_length = 512
+    # max_length = 256
     num_batches=1
     # single gpu
     # batch_size, gradient_accumulation_steps = 1, 32  # e.g., choosing large number mabe for stability of training? 4 (per_device_train_batch_size) * 8 (gradient_accumulation_steps), based on alpaca https://github.com/tatsu-lab/stanford_alpaca 
@@ -137,17 +141,16 @@ def train():
     # gradient_checkpointing = False
     gradient_checkpointing = True
     print(f'{batch_size=} {gradient_accumulation_steps=} {gradient_checkpointing=} {num_epochs=}')
-    # -- wandb
-    num_tokens_trained = max_steps * batch_size * max_length * num_batches 
-    print(f'{num_tokens_trained=}')
-    today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
-    run_name = f'beyond scale: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=})'
-    print(f'\n---> {run_name=}\n')
-
-    # - Init wandb
+    # -- Wandb
     CUDA_VISIBLE_DEVICES = os.environ.get('CUDA_VISIBLE_DEVICES')
     if CUDA_VISIBLE_DEVICES is not None:
         print(f"CUDA_VISIBLE_DEVICES = {CUDA_VISIBLE_DEVICES}")
+    num_tokens_trained = max_steps * batch_size * max_length * num_batches 
+    print(f'{num_tokens_trained=}')
+    today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
+    run_name = f'beyond scale: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=} {CUDA_VISIBLE_DEVICES=})'
+    print(f'\n---> {run_name=}\n')
+    # - init wandb
     debug: bool = mode == 'dryrun'  # BOOL, debug?
     run = wandb.init(mode=mode, project="beyond-scale", name=run_name, save_code=True)
     wandb.config.update({"path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path, 'num_epochs': num_epochs, 'gradient_accumulation_steps': gradient_accumulation_steps, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES})
