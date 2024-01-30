@@ -9,7 +9,7 @@ todo:
 from itertools import chain
 import math
 import random
-from typing import Optional
+from typing import Optional, Any
 
 import torch
 
@@ -352,48 +352,48 @@ def compute_metrics(eval_preds):
     preds = preds[:, :-1].reshape(-1)
     return metric.compute(predictions=preds, references=labels)
 
-def whole_eval(model, 
-         path, 
-         name, 
-         split, 
-         tokenizer, 
-         block_size,
-         output_dir,
-         max_eval_samples: int = 1028, 
-         streaming: bool = True,
-         ):
-    """
-    path, name, split = 'suolyer/pile_openwebtext2', None, 'validation'  # the one sudharsan used
-    """
-    eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
-    eval_dataset = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
-    eval_dataset = eval_dataset.take(max_eval_samples)
+# def whole_eval(model, 
+#          path, 
+#          name, 
+#          split, 
+#          tokenizer, 
+#          block_size,
+#          output_dir,
+#          max_eval_samples: int = 1028, 
+#          streaming: bool = True,
+#          ):
+#     """
+#     path, name, split = 'suolyer/pile_openwebtext2', None, 'validation'  # the one sudharsan used
+#     """
+#     eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
+#     eval_dataset = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
+#     eval_dataset = eval_dataset.take(max_eval_samples)
 
-    print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
-    eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
+#     print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
+#     eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
 
-    trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset)
+#     trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset)
+#     metrics = trainer.evaluate()
+#     try:
+#         perplexity = math.exp(metrics["eval_loss"])
+#     except OverflowError:
+#         perplexity = float("inf")
+#     metrics["perplexity"] = perplexity
+#     print(f'Eval metrics: {metrics=}')
+#     trainer.log_metrics("eval", metrics)  # display metrics
+#     trainer.save_metrics("eval", metrics)
+#     return metrics
+
+def eval_hf(trainer: Trainer, path, name, split, max_eval_samples: Any = 'Unknown Eval Max Samples',):
     metrics = trainer.evaluate()
     try:
         perplexity = math.exp(metrics["eval_loss"])
     except OverflowError:
         perplexity = float("inf")
     metrics["perplexity"] = perplexity
-    print(f'Eval metrics: {metrics=}')
-    trainer.log_metrics("eval", metrics)  # display metrics
-    trainer.save_metrics("eval", metrics)
-    return metrics
-
-def eval_hf(trainer: Trainer, path, name, split,):
-    metrics = trainer.evaluate()
-    try:
-        perplexity = math.exp(metrics["eval_loss"])
-    except OverflowError:
-        perplexity = float("inf")
-    metrics["perplexity"] = perplexity
-    print(f'Eval metrics: {metrics=}')
-    trainer.log_metrics(f"eval_{path}_{name}_{split}", metrics)  # display metrics
-    trainer.save_metrics(f"eval_{path}_{name}_{split}", metrics)
+    print(f'Eval metrics {path} {name} {split} {max_eval_samples}: {metrics=}')
+    trainer.log_metrics(f"eval_{path}_{name}_{split}_{max_eval_samples}", metrics)  # display metrics
+    trainer.save_metrics(f"eval", metrics)
     return metrics
 
 def eval_hf_with_subsample(path, name, split, model, tokenizer, block_size, output_dir, 
@@ -413,7 +413,7 @@ def eval_hf_with_subsample(path, name, split, model, tokenizer, block_size, outp
     trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_batch2)
     metrics = eval_hf(trainer, path, name, split,)
     if verbose:
-        print(f'----> {path=}, {name=}, {split=}, {metrics=}')
+        print(f'----> {path=}, {name=}, {split=}, {metrics=}, {max_eval_samples=}')
     if print_str is not None:
         print(print_str)
     return metrics
