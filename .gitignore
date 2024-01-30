@@ -177,3 +177,6 @@ runs/
 
 # Ignore datasets (if they are large and not essential for version control)
 datasets/
+
+# images for expts
+avg_*.png

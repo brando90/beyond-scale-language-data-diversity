@@ -20,13 +20,21 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
 import os
+from functools import partial
 
-from anatome.similarity import pwcca_distance_choose_best_layer_matrix, svcca_distance, linear_cka_distance, orthogonal_procrustes_distance, temporal_cca
+import sys
+print(sys.path)
+# sys.path.append('/lfs/ampere9/0/brando9/ultimate-anatome/anatome')
+# sys.path.append('/afs/cs.stanford.edu/u/brando9/ultimate-anatome/anatome')
 
-    # _default_backends = {'pwcca': partial(pwcca_distance_choose_best_layer_matrix, backend='svd', epsilon=1e-10),
-    #                      'svcca': partial(svcca_distance, accept_rate=0.99, backend='svd'),
-    #                      'lincka': partial(linear_cka_distance, reduce_bias=False),
-    #                      "opd": orthogonal_procrustes_distance}
+from anatome.similarity import pwcca_distance_choose_best_layer_matrix, svcca_distance, linear_cka_distance, orthogonal_procrustes_distance 
+# from anatome.similarity import pwcca_distance_choose_best_layer_matrix, svcca_distance, linear_cka_distance, orthogonal_procrustes_distance, temporal_cca  # darn can't remember how I defined temportal_cca
+
+metrics = {'svcca': partial(svcca_distance, accept_rate=0.99, backend='svd'),
+           'pwcca': partial(pwcca_distance_choose_best_layer_matrix, backend='svd', epsilon=1e-10),
+           'lincka': partial(linear_cka_distance, reduce_bias=False),
+            "opd": orthogonal_procrustes_distance,
+           }
 
 # Function to set all seeds for reproducibility
 def set_random_seeds(seed_value=42):
@@ -54,6 +62,7 @@ def generate_same_token_sequence(token_value: int,
                                 device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")) -> torch.Tensor:
     """
     Generates a batch of token sequences where each token in the sequence is the same.
+    Used only to debug that computing CCA works 
 
     Args:
     - token_value (int): The token value to be repeated in the sequence.
@@ -75,7 +84,7 @@ def generate_same_token_sequence(token_value: int,
     
     return token_tensor
 
-def generate_semi_random_tokens_limited_vocab(tokenizer: GPT2Tokenizer, 
+def generate_semi_random_tokens_batch_limited_vocab(tokenizer: GPT2Tokenizer, 
                            sequence_length: int = 50, 
                            batch_size: int = 600, 
                            device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu"),
@@ -84,6 +93,7 @@ def generate_semi_random_tokens_limited_vocab(tokenizer: GPT2Tokenizer,
     """
     Generates a batch of semi-random token sequences compatible with GPT-2's tokenizer and moves them to the specified device.
     The randomness is reduced by limiting the selection to a subset of the tokenizer's vocabulary.
+    --> [B, L]
 
     Args:
     - tokenizer (GPT2Tokenizer): The tokenizer for GPT-2.
@@ -102,6 +112,7 @@ def generate_semi_random_tokens_limited_vocab(tokenizer: GPT2Tokenizer,
     batch_random_tokens = [[random.randint(0, vocab_subset_range - 1) for _ in range(sequence_length)] for _ in range(batch_size)]
     
     token_tensor = torch.tensor(batch_random_tokens, dtype=torch.long).to(device)
+    assert token_tensor.size() == torch.Size([batch_size, sequence_length]), f'Error" {token_tensor.shape=} not equal to {batch_size, sequence_length}.'
     return token_tensor
 
 def generate_random_tokens(tokenizer: GPT2Tokenizer, 
@@ -125,9 +136,11 @@ def generate_random_tokens(tokenizer: GPT2Tokenizer,
     token_tensor = torch.tensor(batch_random_tokens, dtype=torch.long).to(device)
     return token_tensor
 
-def main():
+# -- Main
+
+def _test_sanity_check_dist_btw_B1_B2_small_same_large_different():
     """
-    Main function to load the GPT-2 model, generate random tokens, and compute activations.
+    Debug distance between single pair of dataset/batches X, Y/B1, B2 of tokens works.
     """
     # Determine if CUDA (GPU support) is available and set the device accordingly
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -145,8 +158,8 @@ def main():
     # random_tokens2 = generate_random_tokens(tokenizer).to(device)
     random_tokens1 = generate_same_token_sequence(token_value1).to(device)
     random_tokens2 = generate_same_token_sequence(token_value2).to(device)
-    random_tokens1 = generate_semi_random_tokens_limited_vocab(tokenizer).to(device)
-    random_tokens2 = generate_semi_random_tokens_limited_vocab(tokenizer).to(device)
+    random_tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer).to(device)
+    random_tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer).to(device)
     assert random_tokens1.sum().item() != random_tokens2.sum().item(), "Two random sequences of tokens are the same!"
     print(f'{random_tokens1.shape=}')
     print(f'{random_tokens2.shape=}')
@@ -157,12 +170,12 @@ def main():
     activations1 = model(random_tokens1)
     activations2 = model(random_tokens2)
     # Extract the activations tensor
-    activations1 = activations1[0]
-    activations2 = activations2[0]
-    # Reshape the activations tensor to the shape [B, T*D]
+    activations1 = activations1.last_hidden_state
+    activations2 = activations2.last_hidden_state
+    # Reshape the activations tensor to the shape [B, T*D] BAD
     # activations1 = activations1.view(activations1.size(0), -1)
     # activations2 = activations2.view(activations2.size(0), -1)
-    # Reshape the activations tensor to the shape [B*T, D]
+    # Reshape the activations tensor to the shape [B*T, D]  # BETTER
     activations1 = activations1.view(-1, activations1.size(-1))
     activations2 = activations2.view(-1, activations2.size(-1))
 
@@ -172,10 +185,15 @@ def main():
     print(f'{activations1.sum()=}')
     print(f'{activations2.sum()=}')
 
-    dist: torch.Tensor = svcca_distance(activations1, activations2)
+    dist: torch.Tensor = svcca_distance(activations1, activations2, accept_rate=0.99, backend='svd')
     # dist: torch.Tensor = pwcca_distance_choose_best_layer_matrix(activations, activations, backend='svd', epsilon=1e-10)
     # dist, dists = temporal_cca(activations1, activations2)
-    print(f'{dist=}')
+    print(f'Dist btw single pair of data sets/batches should be large (different data sets): {dist=}')
+    
+    dist: torch.Tensor = svcca_distance(activations1, activations1, accept_rate=0.99, backend='svd')
+    # dist: torch.Tensor = pwcca_distance_choose_best_layer_matrix(activations, activations, backend='svd', epsilon=1e-10)
+    # dist, dists = temporal_cca(activations1, activations2)
+    print(f'Dist btw single pair of data sets/batches should be small becuase (same data sets): {dist=}')
 
 def main2_percent_vs_avg_dist():
     """
@@ -196,8 +214,8 @@ def main2_percent_vs_avg_dist():
             print(f'{i=} percentage = {percentage}')
             torch.cuda.empty_cache()
             # Generate token sequences with the given percentage of the vocabulary
-            random_tokens1 = generate_semi_random_tokens_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-            random_tokens2 = generate_semi_random_tokens_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            random_tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            random_tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
             torch.cuda.empty_cache()
             # Compute the activations from the model
             activations1 = model(random_tokens1)[0]
@@ -233,7 +251,7 @@ def main2_percent_vs_avg_dist():
     # save plot as .png file to ~/beyond-scale-language-data-diversity
     plt.savefig(os.path.expanduser('~/beyond-scale-language-data-diversity/avg_cca_dist_vs_vocab_usage.png'))
 
-def main3_percent_vs_avg_dist():
+def main3_percent_vs_avg_dist_with_cis():
     """
     Main function to plot the relationship between percentage of vocabulary used in token generation
     and the average CCA distance between two sets of activations from a GPT-2 model,
@@ -246,33 +264,47 @@ def main3_percent_vs_avg_dist():
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
     print(f'{tokenizer.vocab_size=}')
 
-    percentages = np.linspace(1.0/tokenizer.vocab_size, 1.0, 30)  # Range of percentages from 0.05 to 1.0
+    metric: str = 'svcca'
+    metric: str = 'pwcca'
+    metric: str = 'lincka'
+    metric: str = 'opd'
+    start=1.0/tokenizer.vocab_size
+    stop=1.0
+    num=30
+    percentages = np.linspace(start, stop, num)  # Range of percentages from 0.05 to 1.0
     # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.02, 60)  # Range of percentages from 0.05 to 1.0
     # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.001, 60)  # Range of percentages from 0.05 to 1.0
+    print(f'{percentages=}')
+    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num=} {metric=}')
     avg_distances = []
     ci_values = []
-
+    dist_func = metrics[metric]
     with torch.no_grad():
         for i, percentage in tqdm(enumerate(percentages)):
             print(f'{i=} percentage = {percentage}')
             torch.cuda.empty_cache()
-            random_tokens1 = generate_semi_random_tokens_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-            random_tokens2 = generate_semi_random_tokens_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-            activations1 = model(random_tokens1)[0]
-            activations2 = model(random_tokens2)[0]
+            # raw batch [B, L]
+            random_tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            random_tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            # act batch [B, L, D]
+            activations1 = model(random_tokens1).last_hidden_state
+            activations2 = model(random_tokens2).last_hidden_state
+            print(f'{activations1.shape=} {activations2.shape=}')
 
             activations1 = activations1.view(-1, activations1.size(-1))
             activations2 = activations2.view(-1, activations2.size(-1))
             print(f'{activations1.shape=} {activations2.shape=}')
+            print(f'{activations1.shape[0]/activations1.shape[1]=} (curse low div suggest at least 10 i.e., B/D >= 10)')
 
-            dist = svcca_distance(activations1, activations2)
+            dist = dist_func(activations1, activations2)
             # dist, _ = temporal_cca(activations1, activations2)
             dist_values = dist.view(-1).cpu().numpy()
+            print(f'{dist_values=}')
 
-            mean_dist = np.mean(dist_values)
-            std_dist = np.std(dist_values)
-            n_samples = len(dist_values)
-            ci = 1.96 * (std_dist / np.sqrt(n_samples))
+            mean_dist = float(dist_values)
+            # n_samples = len(dist_values)
+            # ci = 1.96 * (std_dist / np.sqrt(n_samples))
+            ci = 0
             div = mean_dist
             print(f'{div=} +- {ci}')
 
@@ -285,14 +317,16 @@ def main3_percent_vs_avg_dist():
     plt.errorbar(percentages, avg_distances, yerr=ci_values, fmt='-o', ecolor='lightgray', capsize=5)
     plt.xlabel('Percentage of Vocabulary Used')
     plt.ylabel('Average CCA Distance')
-    plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
+    # plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
+    plt.title('Average CCA Distance vs. Vocabulary Usage Percentage')
     plt.grid(True)
     plt.show()
-    plt.savefig(os.path.expanduser('~/beyond-scale-language-data-diversity/avg_cca_dist_vs_vocab_usage_with_ci.png'))
+    plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}.png'))
+    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num=} {metric=}')
 
 def main4_real_hf_dataset():
     """
-    Main function to load the GPT-2 model, generate random tokens, and compute activations.
+    Main function to load the GPT-2 model, generate tokens, and compute activations.
     """
     # set random seed
     set_random_seeds()
@@ -305,7 +339,6 @@ def main4_real_hf_dataset():
     model.to(device)
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
     # print(f'{tokenizer.model_max_length=}')
-
     # Set the padding token in tokenizer to the EOS token
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -357,9 +390,9 @@ def main4_real_hf_dataset():
 if __name__ == '__main__':
     import time
     start = time.time()
-    # main()
+    # _test_sanity_check_dist_btw_B1_B2_small_same_large_different()
     # main2_percent_vs_avg_dist()
-    # main3_percent_vs_avg_dist()
-    main4_real_hf_dataset()
+    main3_percent_vs_avg_dist_with_cis()
+    # main4_real_hf_dataset()
     # print secs, mins, hours elapste one line
     print(f'Done!\a Time elapsed: {(time.time() - start):.2f}secs {((time.time() - start)/60):.2f}mins {((time.time() - start)/60/60):.2f}hours\a\a')
