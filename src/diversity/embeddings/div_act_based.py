@@ -13,6 +13,7 @@ ref: general acts code: https://chat.openai.com/g/g-KV0CvoH8Y-python-excellent-c
 """
 from datasets import load_dataset
 from torch.utils.data import DataLoader
+from torch.utils.data import Dataset
 from transformers import GPT2Model, GPT2Tokenizer, GPT2Config, GPT2LMHeadModel
 import torch
 import random
@@ -43,6 +44,71 @@ metrics = {'svcca': partial(svcca_distance, accept_rate=0.99, backend='svd'),
             "opd": orthogonal_procrustes_distance,
            }
 
+# ref: https://chat.openai.com/g/g-KV0CvoH8Y-python-excellent-comments-doc-strings-types/c/afec3f76-c259-42da-84a6-3e1e5790507a
+class RandomTokenDataset(Dataset):
+    """A custom dataset that generates random tokens and an attention map of all ones compatible with GPT-2."""
+
+    def __init__(self, tokenizer: GPT2Tokenizer, max_length: int, percentange_vocab: float, size: int = sys.maxsize):
+        """
+        Initialize the dataset.
+
+        Args:
+            tokenizer (GPT2Tokenizer): Tokenizer for GPT-2 model.
+            size (int): Number of samples in the dataset.
+            max_length (int): Maximum length of the token sequence.
+        """
+        self.tokenizer = tokenizer
+        self.size = size
+        self.max_length = max_length
+        self.percentange_vocab = percentange_vocab
+        self.vocab_subset_range = int(self.tokenizer.vocab_size * self.percentange_vocab)  # For example, 10% of the total vocab size
+        assert self.vocab_subset_range != 0, "The vocabulary subset range is 0!"
+
+    def __len__(self):
+        """Return the size of the dataset."""
+        return self.size
+
+    def __getitem__(self, idx: int):
+        """
+        Generate a random sample along with an attention map.
+
+        Args:
+            idx (int): Index of the item.
+
+        Returns:
+            dict: A dictionary with keys 'input_ids' and 'attention_mask'. Both contain a list of token ids.
+        """
+        random_tokens = [random.randint(0, self.vocab_subset_range - 1) for _ in range(self.max_length)]
+        attention_mask = [1] * self.max_length  # Attention mask of all ones
+        random_tokens = torch.tensor(random_tokens, dtype=torch.long)
+        attention_mask = torch.tensor(attention_mask, dtype=torch.long)
+        return {"input_ids": random_tokens, "attention_mask": attention_mask}
+
+    def take(self, num_samples: int):
+        """
+        Simulate streaming by generating a specified number of random samples.
+
+        Args:
+            num_samples (int): The number of samples to generate.
+
+        Returns:
+            list: A list of randomly generated samples.
+        """
+        return [self.__getitem__(idx) for idx in range(num_samples)]
+
+    def skip(self, num_samples: int):
+        """
+        Simulate skipping a specified number of samples.
+
+        Args:
+            num_samples (int): The number of samples to skip.
+
+        Returns:
+            RandomTokenDataset: The same dataset object, allowing for method chaining.
+        """
+        # self.skip_samples += num_samples
+        return self
+
 def print_all_special_tokens():
     special_tokens = tokenizer.all_special_tokens
     print("Special tokens in the GPT-2 tokenizer:")
@@ -72,6 +138,8 @@ def set_random_seeds(seed_value=42):
 
 def get_tokenizer_with_subset_of_vocab(tokenizer: GPT2Tokenizer, percentage_to_keep: float) -> GPT2Tokenizer:
     """ 
+    Create a tokenizer with a fraction of the vocabulary. 
+
     ref: https://chat.openai.com/c/5539083a-55b9-4a31-a0c6-bce5eeb45e1b     
     """
     from copy import deepcopy
@@ -187,6 +255,24 @@ def generate_random_tokens(tokenizer: GPT2Tokenizer,
     return token_tensor
 
 # -- Main
+
+def _test0_does_hacky_fraction_tokenizer_work():
+    # - have a tokenizer with only the special token "the", check everything is "the"
+    text_seq: str = "the cat is nice"
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    new_tokenizer = get_tokenizer_with_subset_of_vocab(tokenizer, 1/tokenizer.vocab_size) 
+    # encode to tokens then decode to text
+    tokens = new_tokenizer.encode(text_seq)
+    llm_seq_txt: str = new_tokenizer.decode(tokens)
+    assert llm_seq_txt == "the the the the", f'Error: {llm_seq_txt=} but should be the the the the'
+    # have a tokenizer with only the special token "the" and "cat", check the->the anything_else->the and cat->cat
+    text_seq: str = "the cat is nice"
+    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+    new_tokenizer = get_tokenizer_with_subset_of_vocab(tokenizer, 1/tokenizer.vocab_size) 
+    # encode to tokens then decode to text
+    tokens = new_tokenizer.encode(text_seq)
+    llm_seq_txt = new_tokenizer.decode(tokens)
+    assert llm_seq_txt == "the cat the the", f'Error: {llm_seq_txt=} but should be the cat the the'
 
 def _test_sanity_check_dist_btw_B1_B2_small_same_large_different():
     """
@@ -428,7 +514,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     import wandb
     # - Dryrun
     mode = 'dryrun'; seed = 0
-    mode = 'online'; seed = 0
+    # mode = 'online'; seed = 0
 
     # set random seed
     seed = 0
@@ -437,7 +523,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     # metric
     metric: str = 'svcca'
     metric: str = 'pwcca'
-    # metric: str = 'lincka'
+    metric: str = 'lincka'
     # metric: str = 'opd'
     metric: str = 'task2vec'
     # metric: str = 'token_dist_entropy'
@@ -459,10 +545,10 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     block_size = 2
     
     # real hps
-    num_batches:int = 30
-    batch_size = 32
-    num_percentages=20
-    block_size = 240
+    # num_batches:int = 30
+    # batch_size = 32
+    # num_percentages=50
+    # block_size = 240
     ## block_size = tokenizer.model_max_length
     print(f'--> {num_batches=} {batch_size=} {num_percentages=} {block_size=}')
     print(f'--> tot_iterations={num_batches*num_percentages=}')
@@ -470,10 +556,11 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     print(f'--> {predicted_safety_margin=}')
     
     # Get hf data set
-    path, name, split = "c4", "en", "train"
-    dataset = load_dataset(path=path, name=name, split=split, streaming=True)
+    # path, name, split = "c4", "en", "train"
+    # dataset = load_dataset(path=path, name=name, split=split, streaming=True)
+    path, name, split = "random_uniform_custom", 'random_uniform_custom', 'random_uniform_custom'
 
-    start=1.0/tokenizer.vocab_size
+    start=2.0/tokenizer.vocab_size
     stop=1.0
     percentages = list(np.linspace(start, stop, num_percentages))  # Range of percentages from 0.05 to 1.0
     print(f'{percentages=}')
@@ -492,10 +579,16 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     # for each percentage vocab ~ for each data set with different diversity
     for i, percentage in tqdm(enumerate(percentages), total=len(percentages)):
         print(f'{i=} percentage = {percentage}')
-        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        tokenizer = get_tokenizer_with_subset_of_vocab(tokenizer, percentage)
-        print(f'{tokenizer.vocab_size=}')
-        lm_dataset = raw_dataset_2_lm_data(dataset, tokenizer, block_size)
+        if path == 'c4':
+            # TODO: fix idk if this is why it's not working https://stackoverflow.com/questions/77917717/how-does-one-create-a-hf-tokenizer-with-only-a-fraction-of-the-vocabulary-but-wi
+            # tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+            # tokenizer = get_tokenizer_with_subset_of_vocab(tokenizer, percentage)
+            print(f'{tokenizer.vocab_size=}')
+            lm_dataset = raw_dataset_2_lm_data(dataset, tokenizer, block_size)  # can't use for random tokens because it expects a text field but random tokens are just a tensor of randints
+        elif path == 'random_uniform_custom':
+            lm_dataset = RandomTokenDataset(tokenizer, max_length=block_size, percentange_vocab=percentage)
+        else:
+            raise ValueError(f'Err: {name=}')
         dataloader = iter(DataLoader(lm_dataset, batch_size=batch_size))
         # given a specific percentage vocab/data set diversity, compute average distance between batches
         dist_current_data_set = []
@@ -512,6 +605,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
                 tokens2: dict = next(dataloader)
                 input_ids1, attention_mask1 = tokens1['input_ids'].to(device), tokens1['attention_mask'].to(device)
                 input_ids2, attention_mask2 = tokens2['input_ids'].to(device), tokens2['attention_mask'].to(device)
+                # assert input_ids1.sum().item() != input_ids2.sum().item() and percentage != start, "Batch of sequences of tokens are the same!"
                 assert input_ids1.sum().item() != input_ids2.sum().item(), "Batch of sequences of tokens are the same!"
                 # act batch [B, L, D]
                 with torch.no_grad():
@@ -526,6 +620,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
                     # print(f'--> {activations2.shape[0]/activations2.shape[1]=} {predicted_safety_margin=} (curse low div suggest at least 10 i.e., B/D >= 10)')
 
                     dist = dist_func(activations1, activations2)
+                    dist: float = float(dist.view(-1).cpu().numpy())
             else:
                 # task2vec
                 # ds = dataset.shuffle(buffer_size=500_000, seed=seed) 
@@ -533,15 +628,15 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
                 batch1 = ds.take(batch_size)
                 batch2 = ds.skip(batch_size).take(batch_size)
                 # assert list(batch1)[0]['text'] != list(batch2)[0]['text'], f'Err: Batch of seq of tokens are the same! {batch1["text"]=} {batch2["text"]=}'
-                assert list(batch1)[0]['input_ids'].sum() != list(batch2)[0]['input_ids'].sum(), f'DErr: Batch of seq of tokens are the same! {batch1["input_ids"]=} {batch2["input_ids"]=}'
+                # assert list(batch1)[0]['input_ids'].sum() != list(batch2)[0]['input_ids'].sum(), f'DErr: Batch of seq of tokens are the same! {batch1["input_ids"]=} {batch2["input_ids"]=}'
                 embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch1)
                 embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch2)
                 current_embedding_pair.append((embedding1, embedding2))
                 current_loss_pair.append((loss1, loss2))
                 from diversity.task_similarity import _DISTANCES
                 distance_fn = _DISTANCES['cosine']
-                dist = distance_fn(embedding1, embedding2)
-            dist: float = float(dist.view(-1).cpu().numpy())
+                dist: float = float(distance_fn(embedding1, embedding2))
+            dist: float = float(dist)
             # print(f'{dist=}')
             dist_current_data_set.append(dist)
         # compute avg, std, ci for current data set
@@ -575,18 +670,17 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     plt.title(f'Average {metric} Distance vs. Vocabulary Usage Percentage')
     plt.grid(True)
     plt.show()
-    plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{name}.png'))
+    plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}.png'))
     # save 4 lists to json
     import json
-    with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{name}.json'), 'w') as f:
-        data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set, 'name': name}
+    with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}.json'), 'w') as f:
+        data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set, 'path': path}
         print(f'{data=}')
         json.dump(data, f)
     if metric == 'task2vec':
-        wandb.log({'embeddings': embeddings, 'losses': losses})
         # pickle embeddings and losses & data dict
         import pickle
-        with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{name}_embeddings_losses.pkl'), 'wb') as f:
+        with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}_embeddings_losses.pkl'), 'wb') as f:
             pickle.dump({'embeddings': embeddings, 'losses': losses, 'data': data}, f)
     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}') 
     if mode == 'online':
@@ -598,6 +692,7 @@ if __name__ == '__main__':
     import time
     start = time.time()
     # _test_sanity_check_dist_btw_B1_B2_small_same_large_different()
+    # _test0_does_hacky_fraction_tokenizer_work()
     # main2_percent_vs_avg_dist()
     # main3_percent_vs_avg_dist_with_cis()
     main4_real_hf_percent_vocab_vs_avg_dist_with_cis()
