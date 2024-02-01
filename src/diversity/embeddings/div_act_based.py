@@ -387,134 +387,134 @@ def main2_percent_vs_avg_dist():
     # save plot as .png file to ~/beyond-scale-language-data-diversity
     plt.savefig(os.path.expanduser('~/beyond-scale-language-data-diversity/avg_cca_dist_vs_vocab_usage.png'))
 
-def main3_percent_vs_avg_dist_with_cis():
-    """
-    Main function to plot the relationship between percentage of vocabulary used in token generation
-    and the average CCA distance between two sets of activations from a GPT-2 model,
-    including 95% confidence intervals.
+# def main3_percent_vs_avg_dist_with_cis():
+#     """
+#     Main function to plot the relationship between percentage of vocabulary used in token generation
+#     and the average CCA distance between two sets of activations from a GPT-2 model,
+#     including 95% confidence intervals.
 
-    Note:
-        you can improve current code & speed up by:
-        1. computing a single set of activations for each batch from a data set, so list O(num_batches)
-        2. then for each pair of batches compute their distance and store it in a list O(num_batches^2 - num_batches) [minus diagonal same batch]
-        3. then compute the average and std of the distances of this O(num_batches^2 - num_batches) list
-    """
-    # set random seed
-    seed = 0
-    set_random_seeds(seed)
+#     Note:
+#         you can improve current code & speed up by:
+#         1. computing a single set of activations for each batch from a data set, so list O(num_batches)
+#         2. then for each pair of batches compute their distance and store it in a list O(num_batches^2 - num_batches) [minus diagonal same batch]
+#         3. then compute the average and std of the distances of this O(num_batches^2 - num_batches) list
+#     """
+#     # set random seed
+#     seed = 0
+#     set_random_seeds(seed)
 
-    # Load the GPT-2 model and tokenizer
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = GPT2Model.from_pretrained('gpt2').to(device)
-    tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-    print(f'{tokenizer.vocab_size=}')
+#     # Load the GPT-2 model and tokenizer
+#     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#     model = GPT2Model.from_pretrained('gpt2').to(device)
+#     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+#     print(f'{tokenizer.vocab_size=}')
 
-    num_batches:int = 30
-    metric: str = 'svcca'
-    metric: str = 'pwcca'
-    metric: str = 'lincka'
-    # metric: str = 'opd'
-    # metric: str = 'task2vec'
-    # metric: str = 'token_dist_entropy'
-    start=1.0/tokenizer.vocab_size
-    stop=1.0
-    num_percentages=30
-    percentages = list(np.linspace(start, stop, num_percentages))  # Range of percentages from 0.05 to 1.0
-    # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.02, 60)  # Range of percentages from 0.05 to 1.0
-    # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.001, 60)  # Range of percentages from 0.05 to 1.0
-    print(f'{percentages=}')
-    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
-    avg_dists_per_data_set = []  # [avg(dists1), avg(dists1, ...] = [div1, div2, ...]
-    std_per_data_set = []  # [std(dists1), std(dists2), ...]
-    ci_per_data_set = []  # [ci(dist1)), ci(dists2), ...]
-    dist_func = metrics[metric]
-    embeddings = []
-    losses = []
-    # for each percentage vocab ~ for each data set with different diversity
-    for i, percentage in tqdm(enumerate(percentages)):
-        print(f'{i=} percentage = {percentage}')
-        # given a specific percentage vocab/data set diversity, compute average distance between batches
-        dist_current_data_set = []
-        current_embedding_pair = []
-        current_loss_pair = []
-        for batch_idx in range(num_batches):
-            print(f'{batch_idx=}')
-            torch.cuda.empty_cache()
-            # D1, D2 ~ p(Di | taui),
-            # raw batch [B, L]
-            tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-            tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-            if metric != 'task2vec':
-                # act batch [B, L, D]
-                with torch.no_grad():
-                    activations1 = model(tokens1).last_hidden_state
-                    activations2 = model(tokens2).last_hidden_state
-                    print(f'{activations1.shape=} {activations2.shape=}')
+#     num_batches:int = 30
+#     metric: str = 'svcca'
+#     metric: str = 'pwcca'
+#     metric: str = 'lincka'
+#     # metric: str = 'opd'
+#     metric: str = 'task2vec'
+#     # metric: str = 'token_dist_entropy'
+#     start=1.0/tokenizer.vocab_size
+#     stop=1.0
+#     num_percentages=30
+#     percentages = list(np.linspace(start, stop, num_percentages))  # Range of percentages from 0.05 to 1.0
+#     # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.02, 60)  # Range of percentages from 0.05 to 1.0
+#     # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.001, 60)  # Range of percentages from 0.05 to 1.0
+#     print(f'{percentages=}')
+#     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
+#     avg_dists_per_data_set = []  # [avg(dists1), avg(dists1, ...] = [div1, div2, ...]
+#     std_per_data_set = []  # [std(dists1), std(dists2), ...]
+#     ci_per_data_set = []  # [ci(dist1)), ci(dists2), ...]
+#     dist_func = metrics[metric]
+#     embeddings = []
+#     losses = []
+#     # for each percentage vocab ~ for each data set with different diversity
+#     for i, percentage in tqdm(enumerate(percentages)):
+#         print(f'{i=} percentage = {percentage}')
+#         # given a specific percentage vocab/data set diversity, compute average distance between batches
+#         dist_current_data_set = []
+#         current_embedding_pair = []
+#         current_loss_pair = []
+#         for batch_idx in range(num_batches):
+#             print(f'{batch_idx=}')
+#             torch.cuda.empty_cache()
+#             # D1, D2 ~ p(Di | taui),
+#             # raw batch [B, L]
+#             tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+#             tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+#             if metric != 'task2vec':
+#                 # act batch [B, L, D]
+#                 with torch.no_grad():
+#                     activations1 = model(tokens1).last_hidden_state
+#                     activations2 = model(tokens2).last_hidden_state
+#                     print(f'{activations1.shape=} {activations2.shape=}')
 
-                    activations1 = activations1.view(-1, activations1.size(-1))
-                    activations2 = activations2.view(-1, activations2.size(-1))
-                    print(f'{activations1.shape=} {activations2.shape=}')
-                    print(f'{activations1.shape[0]/activations1.shape[1]=} (curse low div suggest at least 10 i.e., B/D >= 10)')
+#                     activations1 = activations1.view(-1, activations1.size(-1))
+#                     activations2 = activations2.view(-1, activations2.size(-1))
+#                     print(f'{activations1.shape=} {activations2.shape=}')
+#                     print(f'{activations1.shape[0]/activations1.shape[1]=} (curse low div suggest at least 10 i.e., B/D >= 10)')
 
-                    dist = dist_func(activations1, activations2)
-            else:
-                # package [B, L] pytorch data set object into mini data sets
+#                     dist = dist_func(activations1, activations2)
+#             else:
+#                 # package [B, L] pytorch data set object into mini data sets
 
-                # task2vec
-                embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
-                embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
-                current_embedding_pair.append((embedding1, embedding2))
-                current_loss_pair.append((loss1, loss2))
-                from diversity.task_similarity import _DISTANCES
-                distance_fn = _DISTANCES['cosine']
-                dist = distance_fn(embedding1, embedding2)
-            dist = float(dist.view(-1).cpu().numpy())
-            print(f'{dist=}')
-            dist_current_data_set.append(dist)
-        # compute avg, std, ci for current data set
-        avg_dist = np.mean(dist_current_data_set)
-        std_dist = np.std(dist_current_data_set)
-        n_samples = len(dist_current_data_set)
-        ci = 1.96 * (std_dist / np.sqrt(n_samples))
-        div = avg_dist
-        print(f'Data set {percentage=}: avg_dist={div=} +- {ci} ')
-        print(f'Data set {percentage=}: N[dist | {avg_dist=} {std_dist=}]')
-        # TODO: compute distance to a standard normal distribution
-        avg_dists_per_data_set.append(avg_dist)
-        std_per_data_set.append(std_dist)
-        ci_per_data_set.append(ci)
-        # for current data set pair store the embeddings of the data set and the losses
-        embeddings.append(current_embedding_pair)
-        losses.append(current_loss_pair)
-    # Plotting the results with 95% CI
-    print(f'{percentages=}')
-    print(f'{avg_dists_per_data_set=}')
-    print(f'{ci_per_data_set=}')
-    print(f'{std_per_data_set=}')
-    plt.figure(figsize=(10, 6))
-    # plt.plot(percentages, avg_distances, marker='o')
-    plt.errorbar(percentages, avg_dists_per_data_set, yerr=ci_per_data_set, fmt='-o', ecolor='lightgray', capsize=5)
-    plt.xlabel('Percentage of Vocabulary Used')
-    plt.ylabel(f'Average {metric} Distance')
-    # plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
-    plt.title(f'Average {metric} Distance vs. Vocabulary Usage Percentage')
-    plt.grid(True)
-    plt.show()
-    plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}_num_batches_{num_batches}.png'))
-    # save 4 lists to json
-    import json
-    with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}_num_batches_{num_batches}.json'), 'w') as f:
-        data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set}
-        print(f'{data=}')
-        json.dump(data, f)
-        # json.dump({'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set}, f)
-    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
+#                 # task2vec
+#                 embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
+#                 embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
+#                 current_embedding_pair.append((embedding1, embedding2))
+#                 current_loss_pair.append((loss1, loss2))
+#                 from diversity.task_similarity import _DISTANCES
+#                 distance_fn = _DISTANCES['cosine']
+#                 dist = distance_fn(embedding1, embedding2)
+#             dist = float(dist.view(-1).cpu().numpy())
+#             print(f'{dist=}')
+#             dist_current_data_set.append(dist)
+#         # compute avg, std, ci for current data set
+#         avg_dist = np.mean(dist_current_data_set)
+#         std_dist = np.std(dist_current_data_set)
+#         n_samples = len(dist_current_data_set)
+#         ci = 1.96 * (std_dist / np.sqrt(n_samples))
+#         div = avg_dist
+#         print(f'Data set {percentage=}: avg_dist={div=} +- {ci} ')
+#         print(f'Data set {percentage=}: N[dist | {avg_dist=} {std_dist=}]')
+#         # TODO: compute distance to a standard normal distribution
+#         avg_dists_per_data_set.append(avg_dist)
+#         std_per_data_set.append(std_dist)
+#         ci_per_data_set.append(ci)
+#         # for current data set pair store the embeddings of the data set and the losses
+#         embeddings.append(current_embedding_pair)
+#         losses.append(current_loss_pair)
+#     # Plotting the results with 95% CI
+#     print(f'{percentages=}')
+#     print(f'{avg_dists_per_data_set=}')
+#     print(f'{ci_per_data_set=}')
+#     print(f'{std_per_data_set=}')
+#     plt.figure(figsize=(10, 6))
+#     # plt.plot(percentages, avg_distances, marker='o')
+#     plt.errorbar(percentages, avg_dists_per_data_set, yerr=ci_per_data_set, fmt='-o', ecolor='lightgray', capsize=5)
+#     plt.xlabel('Percentage of Vocabulary Used')
+#     plt.ylabel(f'Average {metric} Distance')
+#     # plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
+#     plt.title(f'Average {metric} Distance vs. Vocabulary Usage Percentage')
+#     plt.grid(True)
+#     plt.show()
+#     plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}_num_batches_{num_batches}.png'))
+#     # save 4 lists to json
+#     import json
+#     with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}_num_batches_{num_batches}.json'), 'w') as f:
+#         data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set}
+#         print(f'{data=}')
+#         json.dump(data, f)
+#         # json.dump({'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set}, f)
+#     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
 
 def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     import wandb
     # - Dryrun
     mode = 'dryrun'; seed = 0
-    # mode = 'online'; seed = 0
+    mode = 'online'; seed = 0
 
     # set random seed
     seed = 0
@@ -523,9 +523,9 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     # metric
     metric: str = 'svcca'
     metric: str = 'pwcca'
-    metric: str = 'lincka'
+    # metric: str = 'lincka'
     # metric: str = 'opd'
-    metric: str = 'task2vec'
+    # metric: str = 'task2vec'
     # metric: str = 'token_dist_entropy'
     print(f'--> {metric=}')
     
@@ -545,10 +545,10 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     block_size = 2
     
     # real hps
-    # num_batches:int = 30
-    # batch_size = 32
-    # num_percentages=50
-    # block_size = 240
+    num_batches:int = 30
+    batch_size = 32
+    num_percentages=100
+    block_size = 240
     ## block_size = tokenizer.model_max_length
     print(f'--> {num_batches=} {batch_size=} {num_percentages=} {block_size=}')
     print(f'--> tot_iterations={num_batches*num_percentages=}')
@@ -561,7 +561,9 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     path, name, split = "random_uniform_custom", 'random_uniform_custom', 'random_uniform_custom'
 
     start=2.0/tokenizer.vocab_size
-    stop=1.0
+    # stop=1.0
+    stop=0.4
+    # stop=0.5
     percentages = list(np.linspace(start, stop, num_percentages))  # Range of percentages from 0.05 to 1.0
     print(f'{percentages=}')
     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
@@ -674,7 +676,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     # save 4 lists to json
     import json
     with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}.json'), 'w') as f:
-        data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set, 'path': path}
+        data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set, 'path': path, 'start': start, 'stop': stop}
         print(f'{data=}')
         json.dump(data, f)
     if metric == 'task2vec':

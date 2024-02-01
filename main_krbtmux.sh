@@ -51,7 +51,7 @@ echo $HF_TOKEN
 # python ~/beyond-scale-language-data-diversity/src/diversity/div_coeff.py
 # python ~/beyond-scale-language-data-diversity/src/train/reinit_hf_model.py
 
-python ~/beyond-scale-language-data-diversity/src/training/train.py
+# python ~/beyond-scale-language-data-diversity/src/training/train.py
 # python ~/beyond-scale-language-data-diversity/src/training/train_baby_llama2.py
 
 python ~/beyond-scale-language-data-diversity/src/diversity/embeddings/div_act_based.py
