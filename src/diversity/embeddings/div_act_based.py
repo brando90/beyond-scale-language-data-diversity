@@ -414,7 +414,7 @@ def main2_percent_vs_avg_dist():
 #     metric: str = 'pwcca'
 #     metric: str = 'lincka'
 #     # metric: str = 'opd'
-#     metric: str = 'task2vec'
+#     metric: str = 'Task2Vec'
 #     # metric: str = 'token_dist_entropy'
 #     start=1.0/tokenizer.vocab_size
 #     stop=1.0
@@ -444,7 +444,7 @@ def main2_percent_vs_avg_dist():
 #             # raw batch [B, L]
 #             tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
 #             tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-#             if metric != 'task2vec':
+#             if metric != 'Task2Vec':
 #                 # act batch [B, L, D]
 #                 with torch.no_grad():
 #                     activations1 = model(tokens1).last_hidden_state
@@ -460,7 +460,7 @@ def main2_percent_vs_avg_dist():
 #             else:
 #                 # package [B, L] pytorch data set object into mini data sets
 
-#                 # task2vec
+#                 # Task2Vec
 #                 embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
 #                 embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
 #                 current_embedding_pair.append((embedding1, embedding2))
@@ -525,7 +525,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     metric: str = 'pwcca'
     # metric: str = 'lincka'
     # metric: str = 'opd'
-    # metric: str = 'task2vec'
+    # metric: str = 'Task2Vec'
     # metric: str = 'token_dist_entropy'
     print(f'--> {metric=}')
     
@@ -533,7 +533,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     config = GPT2Config.from_pretrained('gpt2')
     model = GPT2Model.from_pretrained('gpt2').to(device)
-    model = GPT2LMHeadModel.from_pretrained('gpt2').to(device) if metric == 'task2vec' else model
+    model = GPT2LMHeadModel.from_pretrained('gpt2').to(device) if metric == 'Task2Vec' else model
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
 
     # Run main hps
@@ -600,7 +600,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
             # print(f'{batch_idx=}')
             torch.cuda.empty_cache()
             device = next(model.parameters()).device
-            if metric != 'task2vec':
+            if metric != 'Task2Vec':
                 # D1, D2 ~ p(Di | taui),
                 # raw batch [B, L]
                 tokens1: dict = next(dataloader)
@@ -624,7 +624,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
                     dist = dist_func(activations1, activations2)
                     dist: float = float(dist.view(-1).cpu().numpy())
             else:
-                # task2vec
+                # Task2Vec
                 # ds = dataset.shuffle(buffer_size=500_000, seed=seed) 
                 ds = lm_dataset
                 batch1 = ds.take(batch_size)
@@ -667,9 +667,9 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     # plt.plot(percentages, avg_distances, marker='o')
     plt.errorbar(percentages, avg_dists_per_data_set, yerr=ci_per_data_set, ecolor='gray', fmt='-o', capsize=5)
     plt.xlabel('Percentage of Vocabulary Used')
-    plt.ylabel(f'Average {metric} Distance')
+    plt.ylabel(f'Average {metric} Distance (Diversity)')
     # plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
-    plt.title(f'Average {metric} Distance vs. Vocabulary Usage Percentage')
+    plt.title(f'Average {metric} Distance (Diversity)vs. Vocabulary Usage Percentage')
     plt.grid(True)
     plt.show()
     plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}.png'))
@@ -679,7 +679,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
         data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set, 'path': path, 'start': start, 'stop': stop}
         print(f'{data=}')
         json.dump(data, f)
-    if metric == 'task2vec':
+    if metric == 'Task2Vec':
         # pickle embeddings and losses & data dict
         import pickle
         with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}_embeddings_losses.pkl'), 'wb') as f:
