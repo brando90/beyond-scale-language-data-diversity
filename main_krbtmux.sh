@@ -54,6 +54,8 @@ echo $HF_TOKEN
 python ~/beyond-scale-language-data-diversity/src/training/train.py
 # python ~/beyond-scale-language-data-diversity/src/training/train_baby_llama2.py
 
+python ~/beyond-scale-language-data-diversity/src/diversity/embeddings/div_act_based.py
+
 
 # -- other option is to run `echo $SU_PASSWORD | /afs/cs/software/bin/reauth` inside of python, right?
 export JOB_PID=$!

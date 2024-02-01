@@ -121,7 +121,13 @@ def raw_dataset_2_lm_data(raw_dataset,
                           block_size: int, 
                           desired_dataset_column: str = 'text',
                           method_to_remove_columns: str = 'keys',
+                          debug: bool = False, 
+                          streaming: bool = True,
+                          batch_size: int = 2,
+                          fromat: str = 'torch',
                           ):
+    """ Get lm data set but note it uses the grou_texts function which concatenates all tests into a single sequence according to block size (some seq length e.g., max seq length)."""
+    raw_dataset = raw_dataset.with_format(fromat)
     remove_columns = get_column_names(raw_dataset, method_to_remove_columns)  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
     # - Get tokenized train data set
     # Note: Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
@@ -130,6 +136,10 @@ def raw_dataset_2_lm_data(raw_dataset,
     _group_texts = lambda examples : group_texts(examples, block_size)
     # - Get actual data set for lm training (in this case each seq is of length block_size, no need to worry about pad = eos since we are filling each sequence)
     lm_dataset = tokenized_train_datasets.map(_group_texts, batched=True)
+    if debug:
+        batch = get_data_from_hf_dataset(lm_dataset, streaming=streaming, batch_size=batch_size)
+        print(f'{len(next(iter(batch))["input_ids"])=}')
+        assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
     return lm_dataset
 
 def get_size_of_seq_len(dataset_or_batch, verbose: bool = True, streaming: bool = True, batch_size: int = 2) -> int:
@@ -352,38 +362,6 @@ def compute_metrics(eval_preds):
     preds = preds[:, :-1].reshape(-1)
     return metric.compute(predictions=preds, references=labels)
 
-# def whole_eval(model, 
-#          path, 
-#          name, 
-#          split, 
-#          tokenizer, 
-#          block_size,
-#          output_dir,
-#          max_eval_samples: int = 1028, 
-#          streaming: bool = True,
-#          ):
-#     """
-#     path, name, split = 'suolyer/pile_openwebtext2', None, 'validation'  # the one sudharsan used
-#     """
-#     eval_dataset = load_dataset(path, name, streaming=streaming, split=split).with_format("torch") 
-#     eval_dataset = raw_dataset_2_lm_data(eval_dataset, tokenizer, block_size)
-#     eval_dataset = eval_dataset.take(max_eval_samples)
-
-#     print(f'Saving eval results at: {output_dir=}') # The output directory where the model predictions and checkpoints will be written.
-#     eval_args = TrainingArguments(output_dir=output_dir, fp16=False, bf16=torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8)
-
-#     trainer = Trainer(model=model, args=eval_args, train_dataset=None, eval_dataset=eval_dataset)
-#     metrics = trainer.evaluate()
-#     try:
-#         perplexity = math.exp(metrics["eval_loss"])
-#     except OverflowError:
-#         perplexity = float("inf")
-#     metrics["perplexity"] = perplexity
-#     print(f'Eval metrics: {metrics=}')
-#     trainer.log_metrics("eval", metrics)  # display metrics
-#     trainer.save_metrics("eval", metrics)
-#     return metrics
-
 def eval_hf(trainer: Trainer, path, name, split, max_eval_samples: Any = 'Unknown Eval Max Samples',):
     metrics = trainer.evaluate()
     try:
@@ -393,7 +371,7 @@ def eval_hf(trainer: Trainer, path, name, split, max_eval_samples: Any = 'Unknow
     metrics["perplexity"] = perplexity
     print(f'Eval metrics {path} {name} {split} {max_eval_samples}: {metrics=}')
     trainer.log_metrics(f"eval_{path}_{name}_{split}_{max_eval_samples}", metrics)  # display metrics
-    trainer.save_metrics(f"eval", metrics)
+    trainer.save_metrics(f"eval_{path}_{name}_{split}_{max_eval_samples}", metrics)
     return metrics
 
 def eval_hf_with_subsample(path, name, split, model, tokenizer, block_size, output_dir, 

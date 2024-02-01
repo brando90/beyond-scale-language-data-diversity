@@ -12,7 +12,8 @@ ref: acts debate/conv: https://chat.openai.com/c/9aae0b31-689e-415c-ba40-73a790b
 ref: general acts code: https://chat.openai.com/g/g-KV0CvoH8Y-python-excellent-comments-doc-strings-types/c/d50783d2-f958-49d6-a729-2bc6cf28deb7
 """
 from datasets import load_dataset
-from transformers import GPT2Model, GPT2Tokenizer
+from torch.utils.data import DataLoader
+from transformers import GPT2Model, GPT2Tokenizer, GPT2Config, GPT2LMHeadModel
 import torch
 import random
 import time
@@ -22,7 +23,11 @@ from tqdm import tqdm
 import os
 from functools import partial
 
+import wandb
+
 import sys
+
+from training.utils import raw_dataset_2_lm_data
 print(sys.path)
 # sys.path.append('/lfs/ampere9/0/brando9/ultimate-anatome/anatome')
 # sys.path.append('/afs/cs.stanford.edu/u/brando9/ultimate-anatome/anatome')
@@ -30,11 +35,19 @@ print(sys.path)
 from anatome.similarity import pwcca_distance_choose_best_layer_matrix, svcca_distance, linear_cka_distance, orthogonal_procrustes_distance 
 # from anatome.similarity import pwcca_distance_choose_best_layer_matrix, svcca_distance, linear_cka_distance, orthogonal_procrustes_distance, temporal_cca  # darn can't remember how I defined temportal_cca
 
+from diversity.task2vec import Task2Vec
+
 metrics = {'svcca': partial(svcca_distance, accept_rate=0.99, backend='svd'),
            'pwcca': partial(pwcca_distance_choose_best_layer_matrix, backend='svd', epsilon=1e-10),
            'lincka': partial(linear_cka_distance, reduce_bias=False),
             "opd": orthogonal_procrustes_distance,
            }
+
+def print_all_special_tokens():
+    special_tokens = tokenizer.all_special_tokens
+    print("Special tokens in the GPT-2 tokenizer:")
+    for token in special_tokens:
+        print(token)
 
 # Function to set all seeds for reproducibility
 def set_random_seeds(seed_value=42):
@@ -55,6 +68,43 @@ def set_random_seeds(seed_value=42):
     # If running on the GPU, also set the seed there
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed_value)
+
+
+def get_tokenizer_with_subset_of_vocab(tokenizer: GPT2Tokenizer, percentage_to_keep: float) -> GPT2Tokenizer:
+    """ 
+    ref: https://chat.openai.com/c/5539083a-55b9-4a31-a0c6-bce5eeb45e1b     
+    """
+    from copy import deepcopy
+    tok = deepcopy(tokenizer)
+    assert id(tok) != id(tokenizer), "The tokenizer is not a deep copy!"
+    special_tokens = tok.all_special_tokens
+    # to make sure there is always a token set no matter what
+    tok.unk_token = "the"  # but "the" is hopefully common enough that it doesn't damage the semantics of the sentence too much, however, putting EOS or something else might screw up the semantics of the sentence
+
+    # Calculate the number of tokens to keep
+    total_tokens = len(tok)
+    tokens_to_keep_count = int(total_tokens * percentage_to_keep)
+
+    # Get all non-special tokens
+    vocab = tok.get_vocab()
+    all_tokens = list(vocab.keys())
+    non_special_tokens = [token for token in all_tokens if token not in special_tokens]
+    assert "the" in non_special_tokens, "The token 'the' is not in the non-special tokens!"
+
+    # Randomly sample from non-special tokens
+    random_sampled_tokens = random.sample(non_special_tokens, tokens_to_keep_count - len(special_tokens))
+
+    # Combine special tokens with the randomly sampled tokens
+    final_tokens_to_keep = set(special_tokens + random_sampled_tokens + ["the"])
+    assert "the" in non_special_tokens, "The token 'the' is not in the non-special tokens!"
+    assert tok.unk_token == "the", "The token 'the' is not the unknown token!"
+
+    # Update the tokenizer's vocab
+    new_vocab = {token: idx for token, idx in vocab.items() if token in final_tokens_to_keep}
+    tok.vocab = new_vocab
+    tok.ids_to_tokens = {v: k for k, v in vocab.items()}
+    return tok
+
 
 def generate_same_token_sequence(token_value: int, 
                                 sequence_length: int = 50, 
@@ -256,143 +306,300 @@ def main3_percent_vs_avg_dist_with_cis():
     Main function to plot the relationship between percentage of vocabulary used in token generation
     and the average CCA distance between two sets of activations from a GPT-2 model,
     including 95% confidence intervals.
+
+    Note:
+        you can improve current code & speed up by:
+        1. computing a single set of activations for each batch from a data set, so list O(num_batches)
+        2. then for each pair of batches compute their distance and store it in a list O(num_batches^2 - num_batches) [minus diagonal same batch]
+        3. then compute the average and std of the distances of this O(num_batches^2 - num_batches) list
     """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # set random seed
+    seed = 0
+    set_random_seeds(seed)
 
     # Load the GPT-2 model and tokenizer
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = GPT2Model.from_pretrained('gpt2').to(device)
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
     print(f'{tokenizer.vocab_size=}')
 
+    num_batches:int = 30
     metric: str = 'svcca'
     metric: str = 'pwcca'
     metric: str = 'lincka'
-    metric: str = 'opd'
+    # metric: str = 'opd'
+    # metric: str = 'task2vec'
+    # metric: str = 'token_dist_entropy'
     start=1.0/tokenizer.vocab_size
     stop=1.0
-    num=30
-    percentages = np.linspace(start, stop, num)  # Range of percentages from 0.05 to 1.0
+    num_percentages=30
+    percentages = list(np.linspace(start, stop, num_percentages))  # Range of percentages from 0.05 to 1.0
     # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.02, 60)  # Range of percentages from 0.05 to 1.0
     # percentages = np.linspace(1.0/tokenizer.vocab_size, 0.001, 60)  # Range of percentages from 0.05 to 1.0
     print(f'{percentages=}')
-    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num=} {metric=}')
-    avg_distances = []
-    ci_values = []
+    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
+    avg_dists_per_data_set = []  # [avg(dists1), avg(dists1, ...] = [div1, div2, ...]
+    std_per_data_set = []  # [std(dists1), std(dists2), ...]
+    ci_per_data_set = []  # [ci(dist1)), ci(dists2), ...]
     dist_func = metrics[metric]
-    with torch.no_grad():
-        for i, percentage in tqdm(enumerate(percentages)):
-            print(f'{i=} percentage = {percentage}')
+    embeddings = []
+    losses = []
+    # for each percentage vocab ~ for each data set with different diversity
+    for i, percentage in tqdm(enumerate(percentages)):
+        print(f'{i=} percentage = {percentage}')
+        # given a specific percentage vocab/data set diversity, compute average distance between batches
+        dist_current_data_set = []
+        current_embedding_pair = []
+        current_loss_pair = []
+        for batch_idx in range(num_batches):
+            print(f'{batch_idx=}')
             torch.cuda.empty_cache()
+            # D1, D2 ~ p(Di | taui),
             # raw batch [B, L]
-            random_tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-            random_tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
-            # act batch [B, L, D]
-            activations1 = model(random_tokens1).last_hidden_state
-            activations2 = model(random_tokens2).last_hidden_state
-            print(f'{activations1.shape=} {activations2.shape=}')
+            tokens1 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            tokens2 = generate_semi_random_tokens_batch_limited_vocab(tokenizer, percentange_vocab=percentage, device=device)
+            if metric != 'task2vec':
+                # act batch [B, L, D]
+                with torch.no_grad():
+                    activations1 = model(tokens1).last_hidden_state
+                    activations2 = model(tokens2).last_hidden_state
+                    print(f'{activations1.shape=} {activations2.shape=}')
 
-            activations1 = activations1.view(-1, activations1.size(-1))
-            activations2 = activations2.view(-1, activations2.size(-1))
-            print(f'{activations1.shape=} {activations2.shape=}')
-            print(f'{activations1.shape[0]/activations1.shape[1]=} (curse low div suggest at least 10 i.e., B/D >= 10)')
+                    activations1 = activations1.view(-1, activations1.size(-1))
+                    activations2 = activations2.view(-1, activations2.size(-1))
+                    print(f'{activations1.shape=} {activations2.shape=}')
+                    print(f'{activations1.shape[0]/activations1.shape[1]=} (curse low div suggest at least 10 i.e., B/D >= 10)')
 
-            dist = dist_func(activations1, activations2)
-            # dist, _ = temporal_cca(activations1, activations2)
-            dist_values = dist.view(-1).cpu().numpy()
-            print(f'{dist_values=}')
+                    dist = dist_func(activations1, activations2)
+            else:
+                # package [B, L] pytorch data set object into mini data sets
 
-            mean_dist = float(dist_values)
-            # n_samples = len(dist_values)
-            # ci = 1.96 * (std_dist / np.sqrt(n_samples))
-            ci = 0
-            div = mean_dist
-            print(f'{div=} +- {ci}')
-
-            avg_distances.append(mean_dist)
-            ci_values.append(ci)
-
+                # task2vec
+                embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
+                embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch)
+                current_embedding_pair.append((embedding1, embedding2))
+                current_loss_pair.append((loss1, loss2))
+                from diversity.task_similarity import _DISTANCES
+                distance_fn = _DISTANCES['cosine']
+                dist = distance_fn(embedding1, embedding2)
+            dist = float(dist.view(-1).cpu().numpy())
+            print(f'{dist=}')
+            dist_current_data_set.append(dist)
+        # compute avg, std, ci for current data set
+        avg_dist = np.mean(dist_current_data_set)
+        std_dist = np.std(dist_current_data_set)
+        n_samples = len(dist_current_data_set)
+        ci = 1.96 * (std_dist / np.sqrt(n_samples))
+        div = avg_dist
+        print(f'Data set {percentage=}: avg_dist={div=} +- {ci} ')
+        print(f'Data set {percentage=}: N[dist | {avg_dist=} {std_dist=}]')
+        # TODO: compute distance to a standard normal distribution
+        avg_dists_per_data_set.append(avg_dist)
+        std_per_data_set.append(std_dist)
+        ci_per_data_set.append(ci)
+        # for current data set pair store the embeddings of the data set and the losses
+        embeddings.append(current_embedding_pair)
+        losses.append(current_loss_pair)
     # Plotting the results with 95% CI
+    print(f'{percentages=}')
+    print(f'{avg_dists_per_data_set=}')
+    print(f'{ci_per_data_set=}')
+    print(f'{std_per_data_set=}')
     plt.figure(figsize=(10, 6))
     # plt.plot(percentages, avg_distances, marker='o')
-    plt.errorbar(percentages, avg_distances, yerr=ci_values, fmt='-o', ecolor='lightgray', capsize=5)
+    plt.errorbar(percentages, avg_dists_per_data_set, yerr=ci_per_data_set, fmt='-o', ecolor='lightgray', capsize=5)
     plt.xlabel('Percentage of Vocabulary Used')
-    plt.ylabel('Average CCA Distance')
+    plt.ylabel(f'Average {metric} Distance')
     # plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
-    plt.title('Average CCA Distance vs. Vocabulary Usage Percentage')
+    plt.title(f'Average {metric} Distance vs. Vocabulary Usage Percentage')
     plt.grid(True)
     plt.show()
-    plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}.png'))
-    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num=} {metric=}')
+    plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}_num_batches_{num_batches}.png'))
+    # save 4 lists to json
+    import json
+    with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_{num}_num_batches_{num_batches}.json'), 'w') as f:
+        data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set}
+        print(f'{data=}')
+        json.dump(data, f)
+        # json.dump({'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set}, f)
+    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
 
-def main4_real_hf_dataset():
-    """
-    Main function to load the GPT-2 model, generate tokens, and compute activations.
-    """
+def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
+    import wandb
+    # - Dryrun
+    mode = 'dryrun'; seed = 0
+    mode = 'online'; seed = 0
+
     # set random seed
-    set_random_seeds()
-
-    # Determine if CUDA (GPU support) is available and set the device accordingly
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    seed = 0
+    set_random_seeds(seed)
+    
+    # metric
+    metric: str = 'svcca'
+    metric: str = 'pwcca'
+    # metric: str = 'lincka'
+    # metric: str = 'opd'
+    metric: str = 'task2vec'
+    # metric: str = 'token_dist_entropy'
+    print(f'--> {metric=}')
+    
     # Load the GPT-2 model and tokenizer
-    model = GPT2Model.from_pretrained('gpt2')
-    model.to(device)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    config = GPT2Config.from_pretrained('gpt2')
+    model = GPT2Model.from_pretrained('gpt2').to(device)
+    model = GPT2LMHeadModel.from_pretrained('gpt2').to(device) if metric == 'task2vec' else model
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-    # print(f'{tokenizer.model_max_length=}')
-    # Set the padding token in tokenizer to the EOS token
-    if tokenizer.pad_token_id is None:
-        tokenizer.pad_token = tokenizer.eos_token
 
-    # Generate a sequence of tokens from HF dataset
-    dataset = load_dataset("c4", "en", split="train", streaming=True)
-    # Preprocess the texts: encode them to input IDs (tokens)
-    batch_size: int = 300
-    # texts1: list[str] = [dataset[i]['text'] for i in range(batch_size)]  # Example: get batch_size texts from C4
-    # texts2: list[str] = [dataset[i]['text'] for i in range(batch_size)]  # Example: get batch_size texts from C4
-    # Get two batches of data from the dataset stream
-    texts1 = list(dataset.take(2*batch_size))
-    texts2 = texts1[batch_size:]
-    texts1 = [example['text'] for example in texts1]
-    texts2 = [example['text'] for example in texts2]
-    # encodings = tokenizer(texts, return_tensors='pt', padding=True, truncation=True, max_length=model.config.n_positions)
-    encodings1 = tokenizer(texts1, return_tensors='pt', padding=True, truncation=True, max_length=50)
-    encodings2 = tokenizer(texts2, return_tensors='pt', padding=True, truncation=True, max_length=50)
-    input_ids1 = encodings1['input_ids'].to(device)
-    input_ids2 = encodings2['input_ids'].to(device)
-    assert input_ids1.sum().item() != input_ids2.sum().item(), "Two  sequences of tokens are the same!"
-    print(f'{input_ids1.shape=}')
-    print(f'{input_ids2.shape=}')
+    # Run main hps
+    # debug hps
+    start=0.9
+    num_batches:int = 2
+    batch_size = 2
+    num_percentages=2
+    block_size = 2
+    
+    # real hps
+    num_batches:int = 30
+    batch_size = 32
+    num_percentages=20
+    block_size = 240
+    ## block_size = tokenizer.model_max_length
+    print(f'--> {num_batches=} {batch_size=} {num_percentages=} {block_size=}')
+    print(f'--> tot_iterations={num_batches*num_percentages=}')
+    predicted_safety_margin = batch_size * block_size / config.n_embd
+    print(f'--> {predicted_safety_margin=}')
+    
+    # Get hf data set
+    path, name, split = "c4", "en", "train"
+    dataset = load_dataset(path=path, name=name, split=split, streaming=True)
 
-    # Compute the activations from the model
-    activations1 = model(input_ids1)
-    activations2 = model(input_ids2)
-    # Extract the activations tensor
-    activations1 = activations1[0]
-    activations2 = activations2[0]
-    # Reshape the activations tensor to the shape [B, T*D]
-    # activations1 = activations1.view(activations1.size(0), -1)
-    # activations2 = activations2.view(activations2.size(0), -1)
-    # Reshape the activations tensor to the shape [B*T, D]
-    activations1 = activations1.view(-1, activations1.size(-1))
-    activations2 = activations2.view(-1, activations2.size(-1))
+    start=1.0/tokenizer.vocab_size
+    stop=1.0
+    percentages = list(np.linspace(start, stop, num_percentages))  # Range of percentages from 0.05 to 1.0
+    print(f'{percentages=}')
+    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
+    avg_dists_per_data_set = []  # [avg(dists1), avg(dists1, ...] = [div1, div2, ...]
+    std_per_data_set = []  # [std(dists1), std(dists2), ...]
+    ci_per_data_set = []  # [ci(dist1)), ci(dists2), ...]
+    dist_func = metrics.get(metric, None)
+    embeddings = []
+    losses = []
+    CUDA_VISIBLE_DEVICES = os.environ.get('CUDA_VISIBLE_DEVICES')
+    run_name = f"beyond-scale: {metric} {start=:.2f} {stop=:.2f} {num_percentages=} {num_batches=} {block_size=} {batch_size=} {name=} {path=} {split=} {seed=} {device=} {CUDA_VISIBLE_DEVICES=}"
+    run = wandb.init(mode=mode, project="beyond-scale", name=run_name, save_code=True)
+    wandb.config.update({'metric': metric, 'start': start, 'stop': stop, 'num_percentages': num_percentages, 'num_batches': num_batches, 'block_size': block_size, 'batch_size': batch_size, 'name': name, 'path': path, 'split': split, 'seed': seed, 'device': device, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES})
+    print(f'{run.url=}')
+    # for each percentage vocab ~ for each data set with different diversity
+    for i, percentage in tqdm(enumerate(percentages), total=len(percentages)):
+        print(f'{i=} percentage = {percentage}')
+        tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+        tokenizer = get_tokenizer_with_subset_of_vocab(tokenizer, percentage)
+        print(f'{tokenizer.vocab_size=}')
+        lm_dataset = raw_dataset_2_lm_data(dataset, tokenizer, block_size)
+        dataloader = iter(DataLoader(lm_dataset, batch_size=batch_size))
+        # given a specific percentage vocab/data set diversity, compute average distance between batches
+        dist_current_data_set = []
+        current_embedding_pair = []
+        current_loss_pair = []
+        for batch_idx in range(num_batches):
+            # print(f'{batch_idx=}')
+            torch.cuda.empty_cache()
+            device = next(model.parameters()).device
+            if metric != 'task2vec':
+                # D1, D2 ~ p(Di | taui),
+                # raw batch [B, L]
+                tokens1: dict = next(dataloader)
+                tokens2: dict = next(dataloader)
+                input_ids1, attention_mask1 = tokens1['input_ids'].to(device), tokens1['attention_mask'].to(device)
+                input_ids2, attention_mask2 = tokens2['input_ids'].to(device), tokens2['attention_mask'].to(device)
+                assert input_ids1.sum().item() != input_ids2.sum().item(), "Batch of sequences of tokens are the same!"
+                # act batch [B, L, D]
+                with torch.no_grad():
+                    activations1 = model(input_ids=input_ids1, attention_mask=attention_mask1).last_hidden_state
+                    activations2 = model(input_ids=input_ids2, attention_mask=attention_mask2).last_hidden_state
+                    # print(f'{activations1.shape=} \n{activations2.shape=}')
 
-    # Print the shape of the activations tensor
-    print(f"Shape of activations tensor: {activations1.shape}")
-    print(f"Shape of activations tensor: {activations2.shape}")
-    print(f'{activations1.sum()=}')
-    print(f'{activations2.sum()=}')
+                    activations1 = activations1.view(-1, activations1.size(-1))
+                    activations2 = activations2.view(-1, activations2.size(-1))
+                    # print(f'{activations1.shape=} \n{activations2.shape=}')
+                    # print(f'--> {activations1.shape[0]/activations1.shape[1]=} {predicted_safety_margin=} (curse low div suggest at least 10 i.e., B/D >= 10)')
+                    # print(f'--> {activations2.shape[0]/activations2.shape[1]=} {predicted_safety_margin=} (curse low div suggest at least 10 i.e., B/D >= 10)')
 
-    dist: torch.Tensor = svcca_distance(activations1, activations2)
-    # dist: torch.Tensor = pwcca_distance_choose_best_layer_matrix(activations, activations, backend='svd', epsilon=1e-10)
-    # dist, dists = temporal_cca(activations1, activations2)
-    print(f'{dist=}')
+                    dist = dist_func(activations1, activations2)
+            else:
+                # task2vec
+                # ds = dataset.shuffle(buffer_size=500_000, seed=seed) 
+                ds = lm_dataset
+                batch1 = ds.take(batch_size)
+                batch2 = ds.skip(batch_size).take(batch_size)
+                # assert list(batch1)[0]['text'] != list(batch2)[0]['text'], f'Err: Batch of seq of tokens are the same! {batch1["text"]=} {batch2["text"]=}'
+                assert list(batch1)[0]['input_ids'].sum() != list(batch2)[0]['input_ids'].sum(), f'DErr: Batch of seq of tokens are the same! {batch1["input_ids"]=} {batch2["input_ids"]=}'
+                embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch1)
+                embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch2)
+                current_embedding_pair.append((embedding1, embedding2))
+                current_loss_pair.append((loss1, loss2))
+                from diversity.task_similarity import _DISTANCES
+                distance_fn = _DISTANCES['cosine']
+                dist = distance_fn(embedding1, embedding2)
+            dist: float = float(dist.view(-1).cpu().numpy())
+            # print(f'{dist=}')
+            dist_current_data_set.append(dist)
+        # compute avg, std, ci for current data set
+        avg_dist = np.mean(dist_current_data_set)
+        std_dist = np.std(dist_current_data_set)
+        n_samples = len(dist_current_data_set)
+        ci = 1.96 * (std_dist / np.sqrt(n_samples))
+        div = avg_dist
+        print(f'Data set {percentage=}: avg_dist={div=} +- {ci}')
+        print(f'Data set {percentage=}: N[dist | {avg_dist=} {std_dist=}]')
+        if mode == 'online':
+            wandb.log({'avg_dist': avg_dist, 'std_dist': std_dist, 'ci': ci, 'percentage': percentage})
+        # TODO: compute distance to a standard normal distribution
+        avg_dists_per_data_set.append(avg_dist)
+        std_per_data_set.append(std_dist)
+        ci_per_data_set.append(ci)
+        # for current data set pair store the embeddings of the data set and the losses
+        embeddings.append(current_embedding_pair)
+        losses.append(current_loss_pair)
+    # Plotting the results with 95% CI
+    print(f'{percentages=}')
+    print(f'{avg_dists_per_data_set=}')
+    print(f'{ci_per_data_set=}')
+    print(f'{std_per_data_set=}')
+    plt.figure(figsize=(10, 6))
+    # plt.plot(percentages, avg_distances, marker='o')
+    plt.errorbar(percentages, avg_dists_per_data_set, yerr=ci_per_data_set, ecolor='gray', fmt='-o', capsize=5)
+    plt.xlabel('Percentage of Vocabulary Used')
+    plt.ylabel(f'Average {metric} Distance')
+    # plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
+    plt.title(f'Average {metric} Distance vs. Vocabulary Usage Percentage')
+    plt.grid(True)
+    plt.show()
+    plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{name}.png'))
+    # save 4 lists to json
+    import json
+    with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{name}.json'), 'w') as f:
+        data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set, 'name': name}
+        print(f'{data=}')
+        json.dump(data, f)
+    if metric == 'task2vec':
+        wandb.log({'embeddings': embeddings, 'losses': losses})
+        # pickle embeddings and losses & data dict
+        import pickle
+        with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{name}_embeddings_losses.pkl'), 'wb') as f:
+            pickle.dump({'embeddings': embeddings, 'losses': losses, 'data': data}, f)
+    print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}') 
+    if mode == 'online':
+        print(f'{run.url=}')
+        wandb.log({f"Diversity of {path} as Vocabulary Varies": wandb.Image(plt)})
+        run.finish()
 
 if __name__ == '__main__':
     import time
     start = time.time()
     # _test_sanity_check_dist_btw_B1_B2_small_same_large_different()
     # main2_percent_vs_avg_dist()
-    main3_percent_vs_avg_dist_with_cis()
-    # main4_real_hf_dataset()
+    # main3_percent_vs_avg_dist_with_cis()
+    main4_real_hf_percent_vocab_vs_avg_dist_with_cis()
     # print secs, mins, hours elapste one line
     print(f'Done!\a Time elapsed: {(time.time() - start):.2f}secs {((time.time() - start)/60):.2f}mins {((time.time() - start)/60/60):.2f}hours\a\a')

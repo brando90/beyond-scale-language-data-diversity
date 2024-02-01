@@ -84,8 +84,6 @@ def train():
     import wandb
     # - Dryrun
     mode = 'dryrun'; seed = 0; report_to = 'none'
-
-    # - Online (real experiment)
     mode = 'online'; seed = 0; report_to = 'wandb'
 
     # -- Train data sets
@@ -250,6 +248,7 @@ def train():
     print(f'{probabilities=}')
     # - Get raw train data set
     raw_train_datasets = interleave_datasets(train_datasets, probabilities)
+    # -TODO replace bellow with raw_dataset_2_lm_data(...)
     remove_columns = get_column_names(raw_train_datasets)  # remove all keys that are not tensors to avoid bugs in collate function in task2vec's pytorch data loader
     # - Get tokenized train data set
     # Note: Setting `batched=True` in the `dataset.map` function of Hugging Face's datasets library processes the data in batches rather than one item at a time, significantly speeding up the tokenization and preprocessing steps.
@@ -262,6 +261,7 @@ def train():
     print(f'{len(next(iter(batch))["input_ids"])=}')
     assert all(len(data_dict['input_ids']) == block_size for data_dict in iter(batch)), f'Error, some seq in batch are not of length {block_size}'
     train_dataset = lm_train_dataset
+    # -TODO replace upt to here
 
     # -- max steps manually decided depending on how many tokens we want to train on
     per_device_train_batch_size = batch_size
@@ -323,9 +323,9 @@ def train():
     print('---- Evaluate model on C4')
     metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
     print(f'C4 (8 val samples): {metrics=}')
-    print('---- Evaluate model on wikitext-103-v1')
-    metrics = eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
-    print(f'Wikitext (8 val samples): {metrics=}')
+    # print('---- Evaluate model on wikitext-103-v1')
+    # metrics = eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
+    # print(f'Wikitext (8 val samples): {metrics=}')
 
     # -- Eval whole datasets
     print('---- Evaluate model on Whole OpenWebtext')
@@ -334,9 +334,9 @@ def train():
     print('---- Evaluate model on Whole C4')
     metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
     print(f'C4 whole: {metrics=}')
-    print('---- Evaluate model on Whole wikitext-103-v1')
-    metrics = eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
-    print(f'Wikitext whole: {metrics=}')
+    # print('---- Evaluate model on Whole wikitext-103-v1')
+    # metrics = eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
+    # print(f'Wikitext whole: {metrics=}')
     
     # -- Print config to show in log what this run was especially data set
     print(f'{wandb.config=}')
