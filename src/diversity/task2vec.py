@@ -16,6 +16,8 @@ import math
 import random
 from abc import ABC, abstractmethod
 
+from copy import deepcopy
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -88,7 +90,7 @@ class ProbeNetwork(ABC, nn.Module):
 class Task2Vec:
 
     def __init__(self, model: ProbeNetwork, skip_layers=0, max_samples=None, classifier_opts=None,
-                 method='montecarlo', method_opts=None, loader_opts=None, bernoulli=False, mode='autoregressive'): ## LLM DIV
+                 method='montecarlo', method_opts=None, loader_opts=None, bernoulli=False, mode='autoregressive', _deep_copy: bool = True): ## LLM DIV
         if classifier_opts is None:
             classifier_opts = {}
         if method_opts is None:
@@ -98,7 +100,8 @@ class Task2Vec:
         assert method in ('variational', 'montecarlo')
         assert skip_layers >= 0
 
-        self.model = model
+        self.model = deepcopy(model) if _deep_copy else model
+        self.model = dee
         # Fix batch norm running statistics (i.e., put batch_norm layers in eval mode)
         self.model.train()
         self.device = get_device(self.model)
