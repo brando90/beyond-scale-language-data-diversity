@@ -142,17 +142,18 @@ def train():
     print(f'{batch_size=} {gradient_accumulation_steps=} {gradient_checkpointing=} {num_epochs=}')
     # -- Wandb
     CUDA_VISIBLE_DEVICES = os.environ.get('CUDA_VISIBLE_DEVICES')
-    if CUDA_VISIBLE_DEVICES is not None:
-        print(f"CUDA_VISIBLE_DEVICES = {CUDA_VISIBLE_DEVICES}")
+    print(f"CUDA_VISIBLE_DEVICES = {CUDA_VISIBLE_DEVICES}")
     num_tokens_trained = max_steps * batch_size * max_length * num_batches 
     print(f'{num_tokens_trained=}')
     today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
-    run_name = f'beyond scale: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=} {CUDA_VISIBLE_DEVICES=})'
+    current_tmux_session = os.environ.get("TMUX", "").split(",")[-1]
+    run_name = f'beyond scale: {path} ({today=} ({name=}) {data_mixture_name=} {probabilities=} {pretrained_model_name_or_path=} {data_files=} {max_steps=} {batch_size=} {num_tokens_trained=} {gradient_accumulation_steps=} {optim=} {learning_rate=} {max_length=} {weight_decay=} {warmup_ratio=} {CUDA_VISIBLE_DEVICES=} {current_tmux_session=})'
     print(f'\n---> {run_name=}\n')
     # - init wandb
     debug: bool = mode == 'dryrun'  # BOOL, debug?
     run = wandb.init(mode=mode, project="beyond-scale", name=run_name, save_code=True)
-    wandb.config.update({"path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path, 'num_epochs': num_epochs, 'gradient_accumulation_steps': gradient_accumulation_steps, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES})
+    print(f'{run.url=}')
+    wandb.config.update({"path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path, 'num_epochs': num_epochs, 'gradient_accumulation_steps': gradient_accumulation_steps, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES, "current_tmux_session": current_tmux_session})
     # run.notify_on_failure() # https://community.wandb.ai/t/how-do-i-set-the-wandb-alert-programatically-for-my-current-run/4891
     output_dir = Path(f'~/data/results_{today}/').expanduser() if not debug else Path(f'~/data/results/').expanduser()
     print(f'{output_dir=}')
@@ -176,37 +177,13 @@ def train():
         print(f'{block_size=}')
         print()
     elif 'Llama-2' in pretrained_model_name_or_path or 'Mistral' in pretrained_model_name_or_path:
-        # - llama2
+        # - LLama2, later qlora: https://github.com/artidoro/qlora/blob/7f4e95a68dc076bea9b3a413d2b512eca6d004e5/qlora.py#L347C13-L347C13
         from transformers import AutoModelForCausalLM, BitsAndBytesConfig, AutoTokenizer
-        # bf16 or fp32
         torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
-        # get model
-        model = AutoModelForCausalLM.from_pretrained(
-            pretrained_model_name_or_path,
-            # quantization_config=quantization_config,
-            # device_map=device_map,  # device_map = None  https://github.com/huggingface/trl/blob/01c4a35928f41ba25b1d0032a085519b8065c843/examples/scripts/sft_trainer.py#L82
-            trust_remote_code=True,
-            torch_dtype=torch_dtype,
-            use_auth_token=True,
-        )
-        # https://github.com/artidoro/qlora/blob/7f4e95a68dc076bea9b3a413d2b512eca6d004e5/qlora.py#L347C13-L347C13
-        tokenizer = AutoTokenizer.from_pretrained(
-            pretrained_model_name_or_path,
-            # cache_dir=args.cache_dir,
-            padding_side="right",
-            use_fast=False, # Fast tokenizer giving issues.
-            # tokenizer_type='llama' if 'llama' in args.model_name_or_path else None, # Needed for HF name change
-            # tokenizer_type='llama',
-            trust_remote_code=True,
-            use_auth_token=True,
-            # token=token,  # load from cat keys/brandos_hf_token.txt if you want to load it in python and not run huggingface-cli login
-        )
-        # - Ensure padding token is set TODO: how does this not screw up the fine-tuning? e.g., now model doesn't learn to predict eos since it's padded our by mask, ref: https://discuss.huggingface.co/t/why-does-the-falcon-qlora-tutorial-code-use-eos-token-as-pad-token/45954
-        if tokenizer.pad_token_id is None:
-            tokenizer.pad_token = tokenizer.eos_token
-            print(f'{tokenizer.pad_token=}')
-        print(f'{tokenizer.eos_token=}')
-        print(f'{ tokenizer.eos_token_id=}')
+        model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, trust_remote_code=True, torch_dtype=torch_dtype, use_auth_token=True)
+        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path, padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+        tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token_id is None else tokenizer.pad_token
+        print(f'{tokenizer.pad_token=} {tokenizer.eos_token_id=}')
         # get context length for setting max length for training
         if hasattr(model.config, "context_length"):
             print("Context length:", model.config.context_length)

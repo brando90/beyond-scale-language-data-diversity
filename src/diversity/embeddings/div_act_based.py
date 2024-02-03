@@ -11,6 +11,10 @@ echo CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES
 ref: acts debate/conv: https://chat.openai.com/c/9aae0b31-689e-415c-ba40-73a790bb2e0d
 ref: general acts code: https://chat.openai.com/g/g-KV0CvoH8Y-python-excellent-comments-doc-strings-types/c/d50783d2-f958-49d6-a729-2bc6cf28deb7
 """
+import json
+import pickle
+from pathlib import Path
+import datetime
 from datasets import load_dataset
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset
@@ -511,7 +515,6 @@ def main2_percent_vs_avg_dist():
 #     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
 
 def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
-    import wandb
     # - Dryrun
     mode = 'dryrun'; seed = 0
     mode = 'online'; seed = 0
@@ -523,9 +526,9 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     # metric
     metric: str = 'svcca'
     metric: str = 'pwcca'
-    # metric: str = 'lincka'
+    metric: str = 'lincka'
     # metric: str = 'opd'
-    # metric: str = 'task2vec'
+    metric: str = 'task2vec'
     # metric: str = 'token_dist_entropy'
     print(f'--> {metric=}')
     
@@ -546,6 +549,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     
     # real hps
     num_batches:int = 30
+    num_batches:int = 300
     batch_size = 32
     num_percentages=100
     block_size = 240
@@ -558,7 +562,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     # Get hf data set
     # path, name, split = "c4", "en", "train"
     # dataset = load_dataset(path=path, name=name, split=split, streaming=True)
-    path, name, split = "random_uniform_custom", 'random_uniform_custom', 'random_uniform_custom'
+    path, name, split = "Random Uniform", 'Random Uniform', 'Random Uniform'
 
     start=2.0/tokenizer.vocab_size
     # stop=1.0
@@ -574,9 +578,11 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     embeddings = []
     losses = []
     CUDA_VISIBLE_DEVICES = os.environ.get('CUDA_VISIBLE_DEVICES')
-    run_name = f"beyond-scale: {metric} {start=:.2f} {stop=:.2f} {num_percentages=} {num_batches=} {block_size=} {batch_size=} {name=} {path=} {split=} {seed=} {device=} {CUDA_VISIBLE_DEVICES=}"
+    today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
+    current_tmux_session = os.environ.get("TMUX", "").split(",")[-1]
+    run_name = f"beyond-scale: {today} {metric} {start=:.2f} {stop=:.2f} {num_percentages=} {num_batches=} {block_size=} {batch_size=} {name=} {path=} {split=} {seed=} {device=} {CUDA_VISIBLE_DEVICES=} {current_tmux_session=}"
     run = wandb.init(mode=mode, project="beyond-scale", name=run_name, save_code=True)
-    wandb.config.update({'metric': metric, 'start': start, 'stop': stop, 'num_percentages': num_percentages, 'num_batches': num_batches, 'block_size': block_size, 'batch_size': batch_size, 'name': name, 'path': path, 'split': split, 'seed': seed, 'device': device, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES})
+    wandb.config.update({'metric': metric, 'start': start, 'stop': stop, 'num_percentages': num_percentages, 'num_batches': num_batches, 'block_size': block_size, 'batch_size': batch_size, 'name': name, 'path': path, 'split': split, 'seed': seed, 'device': device, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES, 'current_tmux_session': current_tmux_session})
     print(f'{run.url=}')
     # for each percentage vocab ~ for each data set with different diversity
     for i, percentage in tqdm(enumerate(percentages), total=len(percentages)):
@@ -587,7 +593,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
             # tokenizer = get_tokenizer_with_subset_of_vocab(tokenizer, percentage)
             print(f'{tokenizer.vocab_size=}')
             lm_dataset = raw_dataset_2_lm_data(dataset, tokenizer, block_size)  # can't use for random tokens because it expects a text field but random tokens are just a tensor of randints
-        elif path == 'random_uniform_custom':
+        elif path == 'Random Uniform':
             lm_dataset = RandomTokenDataset(tokenizer, max_length=block_size, percentange_vocab=percentage)
         else:
             raise ValueError(f'Err: {name=}')
@@ -673,22 +679,25 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     plt.grid(True)
     plt.show()
     plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}.png'))
+    if mode == 'online':
+        print(f'{run.url=}')
+        # save figure in wandb asap before a potential error in saving file occurs e.g., disk quota
+        wandb.log({f"Diversity of {path} as Vocabulary Varies": wandb.Image(plt)})
+        run.finish()
     # save 4 lists to json
-    import json
-    with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}.json'), 'w') as f:
+    path = path.replace(' ', '_')
+    output_dir = Path(f'~/data/beyond_scale/div_acts_vs_task2vec_vs_tokens/').expanduser() 
+    output_dir.mkdir(parents=True, exist_ok=True)
+    filename: str = f'avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}'
+    with open(output_dir / f'{filename}.json', 'w') as f:
         data = {'percentages': percentages, 'avg_dists_per_data_set': avg_dists_per_data_set, 'ci_per_data_set': ci_per_data_set, 'std_per_data_set': std_per_data_set, 'path': path, 'start': start, 'stop': stop}
         print(f'{data=}')
         json.dump(data, f)
     if metric == 'task2vec':
         # pickle embeddings and losses & data dict
-        import pickle
-        with open(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}_embeddings_losses.pkl'), 'wb') as f:
+        with open(output_dir / f'{filename}_embeddings_losses.pkl', 'w') as f:
             pickle.dump({'embeddings': embeddings, 'losses': losses, 'data': data}, f)
     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}') 
-    if mode == 'online':
-        print(f'{run.url=}')
-        wandb.log({f"Diversity of {path} as Vocabulary Varies": wandb.Image(plt)})
-        run.finish()
 
 if __name__ == '__main__':
     import time

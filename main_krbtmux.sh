@@ -54,6 +54,7 @@ echo $HF_TOKEN
 # python ~/beyond-scale-language-data-diversity/src/training/train.py
 # python ~/beyond-scale-language-data-diversity/src/training/train_baby_llama2.py
 
+export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -k2 -nr | head -n 1 | awk -F ', ' '{print $1}')
 python ~/beyond-scale-language-data-diversity/src/diversity/embeddings/div_act_based.py
 
 

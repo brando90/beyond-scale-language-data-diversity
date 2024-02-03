@@ -260,6 +260,28 @@ def get_deafult_smallest_baby_llama2_v2_109m_0p109(verbose: bool = False, reinit
     """
     return get_smaller_llama2(hidden_size=32*3, num_hidden_layers=32, verbose=verbose, reinit=reinit)
 
+def get_max_context_length(model):
+    # get context length for setting max length for training
+    if hasattr(model.config, "context_length"):
+        print("Context length:", model.config.context_length)
+        max_length = model.config.context_length
+    else:
+        max_length = 4096
+    block_size: int = 4096
+    return block_size
+
+def get_full_llama7b(pretrained_model_name_or_path: str = "meta-llama/Llama-2-7b-hf", put_model_on_device: bool = False):
+    torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
+    model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, trust_remote_code=True, torch_dtype=torch_dtype, use_auth_token=True)
+    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path, padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+    tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token_id is None else tokenizer.pad_token
+    print(f'{tokenizer.pad_token=} {tokenizer.eos_token_id=}')
+    if put_model_on_device:
+        device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
+        model = model.to(device)
+        model = model.to(torch_dtype)
+    return model, tokenizer
+
 def get_full_llama7b_reinit(L: int, gpu_idx: int = -1, reinit_type: str = 'reinitialize_weights_gpt_neox_20B_inspired_4_llama2'):
     config = AutoConfig.from_pretrained("meta-llama/Llama-2-7b-hf", torch_dtype="auto")
     model = AutoModelForCausalLM.from_config(config)
