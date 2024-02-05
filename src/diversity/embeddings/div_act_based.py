@@ -515,6 +515,7 @@ def main2_percent_vs_avg_dist():
 #     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
 
 def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
+    epochs = None
     # - Dryrun
     mode = 'dryrun'; seed = 0
     mode = 'online'; seed = 0
@@ -528,9 +529,11 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     metric: str = 'pwcca'
     metric: str = 'lincka'
     # metric: str = 'opd'
-    # metric: str = 'Task2Vec'
+    metric: str = 'Task2Vec'
+    # epochs: int = 5
+    epochs: int = 0
     # metric: str = 'token_dist_entropy'
-    print(f'--> {metric=}')
+    print(f'--> {metric=} {epochs=}')
     
     # Load the GPT-2 model and tokenizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -637,8 +640,8 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
                 batch2 = ds.skip(batch_size).take(batch_size)
                 # assert list(batch1)[0]['text'] != list(batch2)[0]['text'], f'Err: Batch of seq of tokens are the same! {batch1["text"]=} {batch2["text"]=}'
                 # assert list(batch1)[0]['input_ids'].sum() != list(batch2)[0]['input_ids'].sum(), f'DErr: Batch of seq of tokens are the same! {batch1["input_ids"]=} {batch2["input_ids"]=}'
-                embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch1)
-                embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch2)
+                embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch1, epochs=epochs)
+                embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch2, epochs=epochs)
                 current_embedding_pair.append((embedding1, embedding2))
                 current_loss_pair.append((loss1, loss2))
                 from diversity.task_similarity import _DISTANCES

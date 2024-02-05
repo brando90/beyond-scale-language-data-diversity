@@ -90,8 +90,8 @@ def train():
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
     # - UDACA's
     path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
-    path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
-    path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
+    # path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
+    # path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
     # - models
     # pretrained_model_name_or_path = 'gpt2'  # this is the smallest model gpt2, 124M params https://huggingface.co/gpt2 
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
@@ -113,8 +113,8 @@ def train():
     # max_steps = 1_761 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 5, 6 0.2168M tokens
     # max_steps = 19_073 # <- CHANGE THIS  11 days with baby llama2 v1 36m 1, 32
     # max_steps = 306_000 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32 35.1 tokens
-    # max_length = 4096
-    max_length = 1024
+    max_length = 4096
+    # max_length = 1024
     # max_length = 512
     # max_length = 256
     num_batches=1
@@ -156,6 +156,7 @@ def train():
     wandb.config.update({"path": path, "name": name, "today": today, 'probabilities': probabilities, 'batch_size': batch_size, 'debug': debug, 'data_mixture_name': data_mixture_name, 'streaming': streaming, 'data_files': data_files, 'seed': seed, 'pretrained_model_name_or_path': pretrained_model_name_or_path, 'num_epochs': num_epochs, 'gradient_accumulation_steps': gradient_accumulation_steps, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES, "current_tmux_session": current_tmux_session})
     # run.notify_on_failure() # https://community.wandb.ai/t/how-do-i-set-the-wandb-alert-programatically-for-my-current-run/4891
     output_dir = Path(f'~/data/results_{today}/').expanduser() if not debug else Path(f'~/data/results/').expanduser()
+    output_dir.mkdir(parents=True, exist_ok=True)
     print(f'{output_dir=}')
     print(f'{debug=}')
     print(f'{wandb.config=}')
@@ -213,6 +214,7 @@ def train():
     # Sanity check -- is loss random? lnV = -ln(1/V) = -ln(1/50257) = 10.82 since CE = avg_i v_i * ln(1/p_i) but only one token is right so vi = 1 for some i so CE = ln(1/p_i)
     print(f'vocab_size: {len(tokenizer)=} \nExpected random loss: {math.log(len(tokenizer))=}')
     print(f"CUDA version: {torch.version.cuda=}")
+    print(f'{output_dir=}')
     eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=2, print_str='> Eval OpenWebtext rand mdl')
     eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=2, print_str='> Eval C4 rand mdl')
     eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=2,  print_str='> Eval wikitext rand mdl')
@@ -293,16 +295,16 @@ def train():
 
     # --- Evaluation, NOTE: we are evaluating at the end not during training
     print()
-    # -- Eval subsample
-    print('---- Evaluate model on OpenWebtext')
-    metrics = eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
-    print(f'OpenWebtext (8 val samples): {metrics=}')
-    print('---- Evaluate model on C4')
-    metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
-    print(f'C4 (8 val samples): {metrics=}')
-    # print('---- Evaluate model on wikitext-103-v1')
-    # metrics = eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
-    # print(f'Wikitext (8 val samples): {metrics=}')
+    # # -- Eval subsample
+    # print('---- Evaluate model on OpenWebtext')
+    # metrics = eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
+    # print(f'OpenWebtext (8 val samples): {metrics=}')
+    # print('---- Evaluate model on C4')
+    # metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
+    # print(f'C4 (8 val samples): {metrics=}')
+    # # print('---- Evaluate model on wikitext-103-v1')
+    # # metrics = eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
+    # # print(f'Wikitext (8 val samples): {metrics=}')
 
     # -- Eval whole datasets
     print('---- Evaluate model on Whole OpenWebtext')

@@ -101,7 +101,6 @@ class Task2Vec:
         assert skip_layers >= 0
 
         self.model = deepcopy(model) if _deep_copy else model
-        self.model = dee
         # Fix batch norm running statistics (i.e., put batch_norm layers in eval mode)
         self.model.train()
         self.device = get_device(self.model)

@@ -20,8 +20,11 @@ def evaluate():
     # - hps
     max_length = 1024
 
-    # -- Load checkpoint
+    # -- Checkpoint paths
+    # https://wandb.ai/brando/beyond-scale/runs/gx2y7efl?workspace=user-brando 
     pretrained_model_name_or_path = Path('').expanduser()
+
+    # -- Load checkpoint
     if os.path.exists(pretrained_model_name_or_path):
         model, tokenizer = get_full_llama7b(pretrained_model_name_or_path)
         device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")

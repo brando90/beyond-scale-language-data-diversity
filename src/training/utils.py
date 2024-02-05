@@ -362,13 +362,14 @@ def compute_metrics(eval_preds):
     preds = preds[:, :-1].reshape(-1)
     return metric.compute(predictions=preds, references=labels)
 
-def eval_hf(trainer: Trainer, path, name, split, max_eval_samples: Any = 'Unknown Eval Max Samples',):
+def eval_hf(trainer: Trainer, path: str, name: str, split: str, max_eval_samples: Any = 'Unknown_Eval_Max_Samples',):
     metrics = trainer.evaluate()
     try:
         perplexity = math.exp(metrics["eval_loss"])
     except OverflowError:
         perplexity = float("inf")
     metrics["perplexity"] = perplexity
+    path = path.replace('/', '_')  # needed only when saving results
     print(f'Eval metrics {path} {name} {split} {max_eval_samples}: {metrics=}')
     trainer.log_metrics(f"eval_{path}_{name}_{split}_{max_eval_samples}", metrics)  # display metrics
     trainer.save_metrics(f"eval_{path}_{name}_{split}_{max_eval_samples}", metrics)

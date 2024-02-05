@@ -40,7 +40,7 @@ reautexport CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.free --fo
 
 source $AFS/.bashrc
 conda activate beyond_scale
-export CUDA_VISIBLE_DEVICES=2
+export CUDA_VISIBLE_DEVICES=1
 echo CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES
 export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -k2 -nr | head -n 1 | awk -F ', ' '{print $1}')
 echo CUDA_VISIBLE_DEVICES = $CUDA_VISIBLE_DEVICES
@@ -49,12 +49,11 @@ echo $HF_TOKEN
 
 # -- Run
 # python ~/beyond-scale-language-data-diversity/src/diversity/div_coeff.py
-# python ~/beyond-scale-language-data-diversity/src/train/reinit_hf_model.py
-
-# python ~/beyond-scale-language-data-diversity/src/training/train.py
-# python ~/beyond-scale-language-data-diversity/src/training/train_baby_llama2.py
 
 export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -k2 -nr | head -n 1 | awk -F ', ' '{print $1}')
+python ~/beyond-scale-language-data-diversity/src/training/train.py
+
+# export CUDA_VISIBLE_DEVICES=$(nvidia-smi --query-gpu=index,memory.free --format=csv,noheader,nounits | sort -k2 -nr | head -n 1 | awk -F ', ' '{print $1}')
 python ~/beyond-scale-language-data-diversity/src/diversity/embeddings/div_act_based.py
 
 
