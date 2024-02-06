@@ -270,12 +270,15 @@ def get_max_context_length(model):
     block_size: int = 4096
     return block_size
 
-def get_full_llama7b(pretrained_model_name_or_path: str = "meta-llama/Llama-2-7b-hf", put_model_on_device: bool = False):
+def get_full_llama7b(pretrained_model_name_or_path: str = "meta-llama/Llama-2-7b-hf", put_model_on_device: bool = False, tokenizer_is_none: bool = False):
     torch_dtype = torch.bfloat16 if torch.cuda.get_device_capability(torch.cuda.current_device())[0] >= 8 else torch.float32 # if >= 8 ==> brain float 16 available or set to True if you always want fp32
     model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path, trust_remote_code=True, torch_dtype=torch_dtype, use_auth_token=True)
-    tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path, padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
-    tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token_id is None else tokenizer.pad_token
-    print(f'{tokenizer.pad_token=} {tokenizer.eos_token_id=}')
+    if tokenizer_is_none:
+        tokenizer = None
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path, padding_side="right", use_fast=False, trust_remote_code=True, use_auth_token=True)
+        tokenizer.pad_token = tokenizer.eos_token if tokenizer.pad_token_id is None else tokenizer.pad_token
+        print(f'{tokenizer.pad_token=} {tokenizer.eos_token_id=}')
     if put_model_on_device:
         device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
         model = model.to(device)

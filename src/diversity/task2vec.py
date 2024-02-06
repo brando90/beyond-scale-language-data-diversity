@@ -194,6 +194,7 @@ class Task2Vec:
         set_seed(classifier_opts.get("seed", 42))  # Added here for reproductibility (even between python 2 and 3)
         
         self.model.train()
+        step, epoch, loss = None, None, torch.tensor(-1.0)
         for epoch in train_iterator:
             metrics = AverageMeter()
             epoch_iterator = tqdm(data_loader, desc="Iteration", total=n_batches, leave=False)

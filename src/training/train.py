@@ -90,12 +90,11 @@ def train():
     # path, name, data_files, split = ['c4'], ['en'], [None], ['train']
     # - UDACA's
     path, name, data_files, split = ['UDACA/PileSubsets'], ['uspto'], [None], ['train']
-    # path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
-    # path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
+    path, name, data_files, split = ['UDACA/PileSubsets'], ['pubmed'], [None], ['train']
+    path, name, data_files, split = ['UDACA/PileSubsets', 'UDACA/PileSubsets'], ['uspto', 'pubmed'], [None, None], ['train', 'train']
     # - models
     # pretrained_model_name_or_path = 'gpt2'  # this is the smallest model gpt2, 124M params https://huggingface.co/gpt2 
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-hf'
-    # pretrained_model_name_or_path = 'meta-llama/Llama-2-7b-chat-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-13b-hf'
     # pretrained_model_name_or_path = 'meta-llama/Llama-2-70b-hf'
     # pretrained_model_name_or_path = 'mistralai/Mistral-7B-v0.1'
@@ -105,7 +104,10 @@ def train():
     max_steps = 2
     # max_steps = 300
     # max_steps = 866 # <- CHANGE THIS 12hs with with baby llama2 v1 36m 1, 32
-    max_steps = 1_553  # 22-24hs llama2 full reinit 4*8=32=B 1024=L for 6.3M tokens
+    # max_steps = 1_553  # 22-24hs llama2 full reinit 4*8=32=B 1024=L for 6.3M tokens
+    # max_steps = 3_000  # 2.75729 days rate=79.41secs/it toks=49.1M
+    max_steps = 30_000 # 27.5729 days rate=79.41secs/it toks=491M
+    # max_steps = 300_000 # 275.729 days rate=79.41secs/it toks=
     # max_steps = 5_000
     # max_steps = 61_036  # 3.8 days for B=32 L=512 rate=5.43secs/it for 1B=1e9tokens
     # max_steps = 78_853 # 4.6 days L=512 B=32 r=5.43 ~1.21B 29,999MiB
@@ -283,7 +285,7 @@ def train():
 
     # -- Init Trainer
     print(f'{train_dataset=}')
-    trainer = Trainer(
+    trainer: Trainer = Trainer(
         model=model,
         args=training_args,  
         train_dataset=train_dataset,
@@ -291,7 +293,9 @@ def train():
 
     # - Train
     trainer.train()
+    # note: seems trainer doesn't save tokenizer automatically https://chat.openai.com/c/c40db3a8-b614-40e0-b492-67319a1807e7 
     trainer.save_model(output_dir=output_dir)  # TODO is this really needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
+    ## tokenizer.save_pretrained(output_dir=output_dir)  # ref: https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745/3
 
     # --- Evaluation, NOTE: we are evaluating at the end not during training
     print()
@@ -301,6 +305,7 @@ def train():
     # print(f'OpenWebtext (8 val samples): {metrics=}')
     # print('---- Evaluate model on C4')
     # metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
+    # not here first in case it crashes OWT2
     # print(f'C4 (8 val samples): {metrics=}')
     # # print('---- Evaluate model on wikitext-103-v1')
     # # metrics = eval_hf_with_subsample('wikitext', 'wikitext-103-v1', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
@@ -310,6 +315,10 @@ def train():
     print('---- Evaluate model on Whole OpenWebtext')
     metrics = eval_hf_with_subsample('UDACA/pile_openwebtext2', None, 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
     print(f'OpenWebtext whole: {metrics=}')
+    # c4 evals first in case of errors
+    print('---- Evaluate model on C4')
+    metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=8)
+    print(f'C4 (8 val samples): {metrics=}')
     print('---- Evaluate model on Whole C4')
     metrics = eval_hf_with_subsample('c4', 'en', 'validation', model, tokenizer, block_size, output_dir, max_eval_samples=None)
     print(f'C4 whole: {metrics=}')

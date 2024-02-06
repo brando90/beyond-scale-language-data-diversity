@@ -515,7 +515,7 @@ def main2_percent_vs_avg_dist():
 #     print(f'x-axis (vocab) linspace range: {start=} {stop=} {num_percentages=} {metric=} {num_batches=}')
 
 def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
-    epochs = None
+    epochs_task2_vec = None
     # - Dryrun
     mode = 'dryrun'; seed = 0
     mode = 'online'; seed = 0
@@ -530,10 +530,10 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     metric: str = 'lincka'
     # metric: str = 'opd'
     metric: str = 'Task2Vec'
-    # epochs: int = 5
-    epochs: int = 0
+    # epochs_task2_vec: int = 5
+    epochs_task2_vec: int = 0
     # metric: str = 'token_dist_entropy'
-    print(f'--> {metric=} {epochs=}')
+    print(f'--> {metric=} {epochs_task2_vec=}')
     
     # Load the GPT-2 model and tokenizer
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -583,9 +583,9 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     CUDA_VISIBLE_DEVICES = os.environ.get('CUDA_VISIBLE_DEVICES')
     today = datetime.datetime.now().strftime('%Y-m%m-d%d-t%Hh_%Mm_%Ss')
     current_tmux_session = os.environ.get("TMUX", "").split(",")[-1]
-    run_name = f"beyond-scale: {today} {metric} {start=:.2f} {stop=:.2f} {num_percentages=} {num_batches=} {block_size=} {batch_size=} {name=} {path=} {split=} {seed=} {device=} {CUDA_VISIBLE_DEVICES=} {current_tmux_session=}"
+    run_name = f"beyond-scale: {today} {metric} {start=:.2f} {stop=:.2f} {num_percentages=} {num_batches=} {block_size=} {batch_size=} {name=} {path=} {split=} {seed=} {device=} {CUDA_VISIBLE_DEVICES=} {current_tmux_session=} {epochs_task2_vec=}"
     run = wandb.init(mode=mode, project="beyond-scale", name=run_name, save_code=True)
-    wandb.config.update({'metric': metric, 'start': start, 'stop': stop, 'num_percentages': num_percentages, 'num_batches': num_batches, 'block_size': block_size, 'batch_size': batch_size, 'name': name, 'path': path, 'split': split, 'seed': seed, 'device': device, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES, 'current_tmux_session': current_tmux_session})
+    wandb.config.update({'metric': metric, 'start': start, 'stop': stop, 'num_percentages': num_percentages, 'num_batches': num_batches, 'block_size': block_size, 'batch_size': batch_size, 'name': name, 'path': path, 'split': split, 'seed': seed, 'device': device, 'CUDA_VISIBLE_DEVICES': CUDA_VISIBLE_DEVICES, 'current_tmux_session': current_tmux_session, 'epochs_task2_vec': epochs_task2_vec})
     print(f'{run.url=}')
     # for each percentage vocab ~ for each data set with different diversity
     for i, percentage in tqdm(enumerate(percentages), total=len(percentages)):
@@ -640,8 +640,8 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
                 batch2 = ds.skip(batch_size).take(batch_size)
                 # assert list(batch1)[0]['text'] != list(batch2)[0]['text'], f'Err: Batch of seq of tokens are the same! {batch1["text"]=} {batch2["text"]=}'
                 # assert list(batch1)[0]['input_ids'].sum() != list(batch2)[0]['input_ids'].sum(), f'DErr: Batch of seq of tokens are the same! {batch1["input_ids"]=} {batch2["input_ids"]=}'
-                embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch1, epochs=epochs)
-                embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch2, epochs=epochs)
+                embedding1, loss1 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch1, epochs=epochs_task2_vec)
+                embedding2, loss2 = Task2Vec(model, classifier_opts={'seed': seed}).embed(batch2, epochs=epochs_task2_vec)
                 current_embedding_pair.append((embedding1, embedding2))
                 current_loss_pair.append((loss1, loss2))
                 from diversity.task_similarity import _DISTANCES
