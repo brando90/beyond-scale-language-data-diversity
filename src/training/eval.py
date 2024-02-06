@@ -24,8 +24,8 @@ def eval():
     # https://wandb.ai/brando/beyond-scale/runs/gx2y7efl?workspace=user-brando 
     # pretrained_model_name_or_path = Path('').expanduser()
     # https://wandb.ai/brando/beyond-scale/runs/q54jr2nq/logs?workspace=user-brando
-    pretrained_model_name_or_path = Path('/lfs/ampere9/0/brando9/data/results_2024-m02-d03-t16h_32m_24s/checkpoint-1551').expanduser() 
-    # pretrained_model_name_or_path = Path('/lfs/ampere9/0/brando9/data/results_2024-m02-d03-t16h_32m_24s').expanduser() 
+    # pretrained_model_name_or_path = Path('/lfs/ampere9/0/brando9/data/results_2024-m02-d03-t16h_32m_24s/checkpoint-1551').expanduser() 
+    pretrained_model_name_or_path = Path('/lfs/ampere9/0/brando9/data/results_2024-m02-d03-t16h_32m_24s').expanduser() 
 
     # -- Load checkpoint
     if os.path.exists(pretrained_model_name_or_path):
