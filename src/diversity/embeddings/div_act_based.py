@@ -678,7 +678,7 @@ def main4_real_hf_percent_vocab_vs_avg_dist_with_cis():
     plt.xlabel('Percentage of Vocabulary Used')
     plt.ylabel(f'Average {metric} Distance (Diversity)')
     # plt.title('Average CCA Distance vs. Vocabulary Usage Percentage with 95% CI')
-    plt.title(f'Average {metric} Distance (Diversity)vs. Vocabulary Usage Percentage')
+    plt.title(f'Average {metric} Distance (Diversity) vs. Vocabulary Usage Percentage')
     plt.grid(True)
     plt.show()
     plt.savefig(os.path.expanduser(f'~/beyond-scale-language-data-diversity/avg_{metric}_dist_vs_vocab_usage_with_ci_start_{start:.2f}_stop_{stop:.2f}_num_percentages_{num_percentages}_num_batches_{num_batches}_{path}.png'))
