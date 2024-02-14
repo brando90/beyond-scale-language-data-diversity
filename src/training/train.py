@@ -294,7 +294,10 @@ def train():
     # - Train
     trainer.train()
     # note: seems trainer doesn't save tokenizer automatically https://chat.openai.com/c/c40db3a8-b614-40e0-b492-67319a1807e7 
-    trainer.save_model(output_dir=output_dir)  # TODO is this really needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
+    last_mdl_ckpt_path: Path = output_dir / 'final_ckpt'
+    last_mdl_ckpt_path.mkdir(parents=True, exists_ok=True)
+    trainer.save_model(output_dir=last_mdl_ckpt_path)
+    # trainer.save_model(output_dir=output_dir)  # TODO is this really needed? https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745
     ## tokenizer.save_pretrained(output_dir=output_dir)  # ref: https://discuss.huggingface.co/t/do-we-need-to-explicity-save-the-model-if-the-save-steps-is-not-a-multiple-of-the-num-steps-with-hf/56745/3
 
     # --- Evaluation, NOTE: we are evaluating at the end not during training
