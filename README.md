@@ -16,6 +16,16 @@ This repository also contains code for generating GINC datasets and computing th
 
 Run `ginc/runner_generate.sh` to generate GINC datasets with varying number of HMMs and number of symbols. Run `ginc/runner_train.sh` to train GPT-2 Transformers on GINC datasets using wandb.
 
+## Conda Install
+Create conda env:
+```bash
+conda create -n beyond_scale_div_coeff python=3.11 -y
+# conda activatexport HOME=/data/
+conda activate beyond_scale_div_coeff
+pip install -e ~/beyond-scale-language-data-diversity
+# conda remove --name beyond_scale_diiv_coeff --all
+```
+
 ## Acknowledgements
 We acknowledge that code in `ginc/` was sourced from [the original GINC repo](https://github.com/p-lambda/incontext-learning). We thank [Rylan Schaeffer](http://rylanschaeffer.github.io/) for his contributions to updating the scripts in `ginc/` for ease of usage.
 

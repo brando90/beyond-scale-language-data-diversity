@@ -31,8 +31,9 @@ setup(
     long_description_content_type="text/markdown",
     url='https://github.com/alycialee/beyond-scale-language-data-diversity',
     author='Alycia Lee & Brando Miranda',
-    author_email='alylee15@stanford.edu',
-    python_requires='>=3.10.11',
+    author_email='brando9@cs.stanford.edu',
+    # python_requires='>=3.10.11',
+    python_requires='>=3.11',
     license='Apache 2.0',
 
     # currently
@@ -52,7 +53,7 @@ setup(
         'torch',
         'torchvision',
         'torchaudio',
-        'fairseq',
+        # 'fairseq',
         
         'transformers',
         'datasets',
