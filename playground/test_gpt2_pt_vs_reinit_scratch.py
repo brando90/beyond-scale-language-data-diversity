@@ -5,22 +5,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, GPT2Config
 
 from pdb import set_trace as st
 
-def reinit_gpt_neox_20B_inspired_use_case_llama2(model, 
+def reinit_gpt_neox_20B_inspired_use_case_llama2_mutates(model, 
                                                 L: int,  # for beyond scale we filled the data to block size which is 4096 for max seq length llama2
                                                 ):
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):  # all linear layers including MLP and attention, let's try this first given it's smaller
-        # if 'gate_proj' == name or 'up_proj' == name or 'down_proj' == name or 'lm_head' == name:  # all FF/MLP layers (not attention)
             D = module.in_features  # I think this is right size it's xW []
-            # L = module.weight.shape[1]  # I don't think you can get this from the module
             std = 3 / (L * (D)**0.5)
             nn.init.normal_(module.weight, mean=0, std=std)
             if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
                 nn.init.constant_(module.bias, 0)
-        # elif isinstance(module, LlamaRMSNorm):
-        # if name == 'norm' or name == 'input_layernorm' or name == 'post_attention_layernorm':
-        #str(model.model.layers[0].input_layernorm)
-        #'LlamaRMSNorm()'
         elif str(module) == 'LlamaRMSNorm()':
             if hasattr(module, 'weight'):
                 if module.weight is not None:  # todo: idk if needed for layer norm
@@ -32,18 +26,20 @@ def reinit_gpt_neox_20B_inspired_use_case_llama2(model,
             if hasattr(module, 'weight'):
                 if module.weight is not None: 
                     D = module.weight.shape[0]
-                    # L = module.weight.shape[1]  # I don't think you can get this from the module
                     std = (2 / (D + 4*D))**0.5  # e.g., small init attention layers
                     nn.init.normal_(module.weight, mean=0, std=std)
             if hasattr(module, 'bias'):
                 if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
                     nn.init.constant_(module.bias, 0)
+    return
 
 def reinit_gpt2_weights_mutates(
         model, 
-        weight_std: float = 0.00002,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
+        # weight_std: float = 0.00000002,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
+        weight_std: float = 2e-6,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
+        # weight_std: float = 0.0,
         bias_std: float = 0.0, 
-        verbose: bool = True,
+        verbose: bool = False,
         ) -> None:
     """ 
     Why we chose < 0.02 for standard deviation: https://github.com/alycialee/beyond-scale-language-data-diversity/issues/18
@@ -65,14 +61,12 @@ def reinit_gpt2_weights_mutates(
             print(f'{module.weight.norm(2)=}') if verbose else None
             nn.init.normal_(module.weight, mean=0, std=weight_std)
             print(f'{module.weight.norm(2)=}') if verbose else None
-            if module.bias is not None:
-                nn.init.constant_(module.bias, bias_std)
         elif isinstance(module, nn.Dropout):
             pass # has no params
         elif isinstance(module, nn.LayerNorm):
             # gpt suggestion: https://chatgpt.com/c/b9d34414-a123-48d6-bbae-334dedb580f3
             print(f'{module.weight.norm(2)=}') if verbose else None
-            nn.init.constant_(module.weight, 1.0)
+            nn.init.constant_(module.weight, 0.0)
             print(f'{module.weight.norm(2)=}') if verbose else None
             if module.bias is not None:
                 nn.init.constant_(module.bias, 0.0)
@@ -82,10 +76,18 @@ def reinit_gpt2_weights_mutates(
             print(f'{module.weight.norm(2)=}') if verbose else None
             if module.bias is not None:
                 nn.init.constant_(module.bias, bias_std)
-        elif isinstance(module, nn.NewGELUActivation):
-            pass
-
-
+        # elif isinstance(module, nn.NewGELUActivation):
+        #     pass
+        else:  
+            if hasattr(module, 'weight'):
+                if module.weight is not None: 
+                    D = module.weight.shape[0]
+                    # std = (2 / (D + 4*D))**0.5  # e.g., small init attention layers
+                    std = weight_std
+                    nn.init.normal_(module.weight, mean=0, std=std)
+            if hasattr(module, 'bias'):
+                if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
+                    nn.init.constant_(module.bias, bias_std)
     model_weight_norm = sum([torch.norm(param, p=2).item() for param in model.parameters()]) if verbose else None
     print(f'{model_weight_norm=}') if verbose else None
     return
@@ -94,6 +96,7 @@ def reinit_gpt2_weights_mutates(
 torch.cuda.empty_cache() # Clear CUDA cache to free up memory
 torch_dtype = torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float32 
 model = AutoModelForCausalLM.from_pretrained("gpt2-xl", torch_dtype=torch_dtype, trust_remote_code=True)
+print(f'{model=}')
 device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 pretrained_tokenizer = AutoTokenizer.from_pretrained("gpt2-xl", padding_side="right", trust_remote_code=True)
@@ -131,7 +134,7 @@ print(f"Total L2 norm of model initialized from scratch with small reinit (not d
 model = AutoModelForCausalLM.from_pretrained("gpt2-xl", torch_dtype=torch_dtype, trust_remote_code=True)
 device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
-reinit_gpt_neox_20B_inspired_use_case_llama2(model)
+reinit_gpt_neox_20B_inspired_use_case_llama2_mutates(model, 1024)
 scratch_weight_norm_small_reinit = sum([torch.norm(param, p=2).item() for param in model.parameters()])
 print(f"Total L2 norm of model initialized from scratch with gpt_neox_20B reinit (not default HF config): {scratch_weight_norm_small_reinit:.2f}")
 
