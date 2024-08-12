@@ -94,6 +94,7 @@ def reinitialize_linear_weights_mutates(
 
 def reinitialize_weights_xavier(model):
     # """ Reinit with xavier """
+    # raise ValueError(f'Only reinits linear layers, make sure you reinit ALL layers, print your model:\n {model}')
     # for module in model.modules():
     #     if isinstance(module, nn.Linear):
     #         nn.init.xavier_normal_(module.weight)
@@ -112,6 +113,7 @@ def reinitialize_weights_kamming(model):
     Choosing 'fan_out' preserves the magnitudes in the backwards pass.
     recommended to use only with 'relu' or 'leaky_relu' (default).
     """
+    raise ValueError(f'Only reinits linear layers, make sure you reinit ALL layers, print your model:\n {model}')
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):
             nn.init.kaiming_uniform_(module.weight)
@@ -220,10 +222,10 @@ some stds
         elif str(module) == 'LlamaRMSNorm()':
             if hasattr(module, 'weight'):
                 if module.weight is not None:  # todo: idk if needed for layer norm
-                    nn.init.constant_(module.weight, 1)
+                    nn.init.constant_(module.weight, 1.0)
             if hasattr(module, 'bias'):  # I don't think RMSNorm has bias, the whole point it doesn't think centering matters so bias is similar to centering
                 if module.bias is not None:
-                    nn.init.constant_(module.bias, 0)
+                    nn.init.constant_(module.bias, 0.0)
         else:  
             if hasattr(module, 'weight'):
                 if module.weight is not None: 
