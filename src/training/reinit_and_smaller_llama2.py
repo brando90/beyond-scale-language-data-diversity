@@ -68,23 +68,29 @@ def get_weight_norms(model: nn.Module, verbose: bool = False) -> None:
 
 # -- reinit (after you've created the new arch you want)
 
-def reinitialize_weights(model, 
-                         std: float = 0.0002,  # 0.02 ref: hailey S doesn't recommend this huge value! 
-                         ) -> None:
+def reinitialize_linear_weights_mutates(
+        model, 
+        weight_std: float = 0.0002,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 
+        bias_std: float = 0.0, 
+        ) -> None:
     """
-    
-    From cs197, we choose std = 0.02 because of these two links:
-    Why we chose 0.02 for standard deviation:
-    https://github.com/huggingface/transformers/blob/772307be7649e1333a933cfaa229dc0dec2fd331/src/transformers/models/llama/modeling_llama.py#L858
-    https://github.com/huggingface/transformers/blob/772307be7649e1333a933cfaa229dc0dec2fd331/src/transformers/models/llama/configuration_llama.py#L127
+    Note: for me (BM) I'm only using this for now for GPT2 (specially xl) experiments.
+
+    From cs197, we choose std < 0.02 because of these two links:
+    Why we chose < 0.02 for standard deviation:
+        - https://github.com/alycialee/beyond-scale-language-data-diversity/issues/18
     Default is set to 0.02 in source code (see line 858 of the first link, and 127 of hte second link)
     """
     for module in model.modules():
         if isinstance(module, nn.Linear):
-            # nn.init.normal_(module.weight, mean=0, std=0.02)
-            nn.init.normal_(module.weight, mean=0, std=std)
+            # nn.init.normal_(module.weight, mean=0, std=0.02) # original, evil!
+            nn.init.normal_(module.weight, mean=0, std=weight_std)
             if module.bias is not None:
-                nn.init.constant_(module.bias, 0)
+                nn.init.constant_(module.bias, bias_std)
+        # for now assuming not needed but you can check bias for norm layers and set them to something 
+        # if hasattr(module, 'bias'):
+        #     if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
+        #             nn.init.constant_(module.bias, 0)
 
 def reinitialize_weights_xavier(model):
     # """ Reinit with xavier """
@@ -121,6 +127,9 @@ def reinitialize_weights_gpt_neox_20B_inspired_4_llama2(model,
                                                         ):
     
     """
+    Note: This is what we used for div coeff paper but with 7B model, baby llama never seem to train.
+
+
     Note: we nearly gpt-neox_20B (2022) & llama1 , llama2 (2019) does not say how they init
 
     I think gpt-neox_20B & llama2 both have pre-layernorm, because transformers without tears uses the init that gpt-neox-20B uses and llama1 says it uses prenorm,
