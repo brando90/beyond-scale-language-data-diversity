@@ -68,39 +68,64 @@ def get_weight_norms(model: nn.Module, verbose: bool = False) -> None:
 
 # -- reinit (after you've created the new arch you want)
 
-def reinitialize_linear_weights_mutates(
+def reinit_gpt2_weights_mutates(
         model, 
-        weight_std: float = 0.0002,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 
+        # weight_std: float = 0.00000002,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
+        weight_std: float = 2e-6,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
+        # weight_std: float = 0.0,
         bias_std: float = 0.0, 
+        verbose: bool = False,
         ) -> None:
+    """ 
+    Why we chose < 0.02 for standard deviation: https://github.com/alycialee/beyond-scale-language-data-diversity/issues/18
+    Reinit for gpt2 only test for xl: https://huggingface.co/openai-community/gpt2-xl
     """
-    Note: for me (BM) I'm only using this for now for GPT2 (specially xl) experiments.
-
-    From cs197, we choose std < 0.02 because of these two links:
-    Why we chose < 0.02 for standard deviation:
-        - https://github.com/alycialee/beyond-scale-language-data-diversity/issues/18
-    Default is set to 0.02 in source code (see line 858 of the first link, and 127 of hte second link)
-    """
-    for module in model.modules():
+    model_weight_norm = sum([torch.norm(param, p=2).item() for param in model.parameters()]) if verbose else None
+    print(f'{model_weight_norm=}') if verbose else None
+    for module_name, module in model.named_modules():
+        print(f'{module_name=} {isinstance(module, nn.Linear)=} {type(module)=}') if verbose else None
         if isinstance(module, nn.Linear):
             # nn.init.normal_(module.weight, mean=0, std=0.02) # original, evil!
+            print(f'{module.weight.norm(2)=}') if verbose else None
             nn.init.normal_(module.weight, mean=0, std=weight_std)
+            print(f'{module.weight.norm(2)=}') if verbose else None
+            if module.bias is not None:
+                # gpt suggestion: https://chatgpt.com/c/b9d34414-a123-48d6-bbae-334dedb580f3
+                nn.init.constant_(module.bias, bias_std)
+        elif isinstance(module, nn.Embedding):
+            print(f'{module.weight.norm(2)=}') if verbose else None
+            nn.init.normal_(module.weight, mean=0, std=weight_std)
+            print(f'{module.weight.norm(2)=}') if verbose else None
+        elif isinstance(module, nn.Dropout):
+            pass # has no params
+        elif isinstance(module, nn.LayerNorm):
+            # gpt suggestion: https://chatgpt.com/c/b9d34414-a123-48d6-bbae-334dedb580f3
+            print(f'{module.weight.norm(2)=}') if verbose else None
+            nn.init.constant_(module.weight, 0.0)
+            print(f'{module.weight.norm(2)=}') if verbose else None
+            if module.bias is not None:
+                nn.init.constant_(module.bias, 0.0)
+        elif isinstance(module, nn.Conv1d):
+            print(f'{module.weight.norm(2)=}') if verbose else None
+            nn.init.normal_(module.weight, mean=0, std=weight_std)
+            print(f'{module.weight.norm(2)=}') if verbose else None
             if module.bias is not None:
                 nn.init.constant_(module.bias, bias_std)
-        # for now assuming not needed but you can check bias for norm layers and set them to something 
-        # if hasattr(module, 'bias'):
-        #     if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
-        #             nn.init.constant_(module.bias, 0)
-
-def reinitialize_weights_xavier(model):
-    # """ Reinit with xavier """
-    # raise ValueError(f'Only reinits linear layers, make sure you reinit ALL layers, print your model:\n {model}')
-    # for module in model.modules():
-    #     if isinstance(module, nn.Linear):
-    #         nn.init.xavier_normal_(module.weight)
-    #         if module.bias is not None:
-    #             nn.init.constant_(module.bias, 0)
-    pass
+        # elif isinstance(module, nn.NewGELUActivation):
+        #     pass
+        else:  
+            if hasattr(module, 'weight'):
+                if module.weight is not None: 
+                    D = module.weight.shape[0]
+                    # std = (2 / (D + 4*D))**0.5  # e.g., small init attention layers
+                    std = weight_std
+                    nn.init.normal_(module.weight, mean=0, std=std)
+            if hasattr(module, 'bias'):
+                if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
+                    nn.init.constant_(module.bias, bias_std)
+    model_weight_norm = sum([torch.norm(param, p=2).item() for param in model.parameters()]) if verbose else None
+    print(f'{model_weight_norm=}') if verbose else None
+    return
 
 def reinitialize_weights_kamming(model):
     """ 
@@ -114,15 +139,15 @@ def reinitialize_weights_kamming(model):
     recommended to use only with 'relu' or 'leaky_relu' (default).
     """
     raise ValueError(f'Only reinits linear layers, make sure you reinit ALL layers, print your model:\n {model}')
-    for name, module in model.named_modules():
-        if isinstance(module, nn.Linear):
-            nn.init.kaiming_uniform_(module.weight)
-            if module.bias is not None:
-                nn.init.constant_(module.bias, 0)
-        elif 'norm' in name.lower() or 'norm' in str(module).lower():
-            nn.init.constant_(module.weight, 1)
-            if module.bias is not None:
-                nn.init.constant_(module.bias, 0)
+    # for name, module in model.named_modules():
+    #     if isinstance(module, nn.Linear):
+    #         nn.init.kaiming_uniform_(module.weight)
+    #         if module.bias is not None:
+    #             nn.init.constant_(module.bias, 0)
+    #     elif 'norm' in name.lower() or 'norm' in str(module).lower():
+    #         nn.init.constant_(module.weight, 1)
+    #         if module.bias is not None:
+    #             nn.init.constant_(module.bias, 0)
 
 def reinitialize_weights_gpt_neox_20B_inspired_4_llama2(model, 
                                                         L: int,  # for beyond scale we filled the data to block size which is 4096 for max seq length llama2
@@ -208,17 +233,11 @@ some stds
     """
     for name, module in model.named_modules():
         if isinstance(module, nn.Linear):  # all linear layers including MLP and attention, let's try this first given it's smaller
-        # if 'gate_proj' == name or 'up_proj' == name or 'down_proj' == name or 'lm_head' == name:  # all FF/MLP layers (not attention)
             D = module.in_features  # I think this is right size it's xW []
-            # L = module.weight.shape[1]  # I don't think you can get this from the module
             std = 3 / (L * (D)**0.5)
             nn.init.normal_(module.weight, mean=0, std=std)
             if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
                 nn.init.constant_(module.bias, 0)
-        # elif isinstance(module, LlamaRMSNorm):
-        # if name == 'norm' or name == 'input_layernorm' or name == 'post_attention_layernorm':
-        #str(model.model.layers[0].input_layernorm)
-        #'LlamaRMSNorm()'
         elif str(module) == 'LlamaRMSNorm()':
             if hasattr(module, 'weight'):
                 if module.weight is not None:  # todo: idk if needed for layer norm
@@ -230,12 +249,12 @@ some stds
             if hasattr(module, 'weight'):
                 if module.weight is not None: 
                     D = module.weight.shape[0]
-                    # L = module.weight.shape[1]  # I don't think you can get this from the module
                     std = (2 / (D + 4*D))**0.5  # e.g., small init attention layers
                     nn.init.normal_(module.weight, mean=0, std=std)
             if hasattr(module, 'bias'):
                 if module.bias is not None:  # don't think biases matter cuz bias=False in all layers
                     nn.init.constant_(module.bias, 0)
+    return
 
 # - get just the arch, then you have to reinit it
 
