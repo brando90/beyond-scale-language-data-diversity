@@ -100,6 +100,7 @@ print(f'{model=}')
 device = torch.device(f"cuda:{0}" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
 pretrained_tokenizer = AutoTokenizer.from_pretrained("gpt2-xl", padding_side="right", trust_remote_code=True)
+print(f'log(Vocab Length): {torch.log(torch.tensor(len(pretrained_tokenizer)))=}')
 pretrained_tokenizer.pad_token = pretrained_tokenizer.eos_token if pretrained_tokenizer.pad_token_id is None else pretrained_tokenizer.pad_token
 print(f'{pretrained_tokenizer=}\n{pretrained_tokenizer.bos_token_id=} {pretrained_tokenizer.eos_token_id=} {pretrained_tokenizer.pad_token_id=} {pretrained_tokenizer.vocab_size=}')
 # Step 2: Calculate the L2 norm of the weights for the pre-trained model

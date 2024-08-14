@@ -71,7 +71,7 @@ def get_weight_norms(model: nn.Module, verbose: bool = False) -> None:
 def reinit_gpt2_weights_mutates(
         model, 
         # weight_std: float = 0.00000002,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
-        weight_std: float = 2e-6,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
+        weight_std: float = 2e-4,  # 0.02 ref: Hailey S doesn't recommend this huge value! ref: https://x.com/haileysch__/status/1822758486632997102 I'm choosing a really small value due to my previous research with Tommy Poggio suggested to us that larger inits give worse generalization error
         # weight_std: float = 0.0,
         bias_std: float = 0.0, 
         verbose: bool = False,
