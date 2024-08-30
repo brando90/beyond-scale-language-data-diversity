@@ -26,8 +26,22 @@ pip install -e ~/beyond-scale-language-data-diversity
 # conda remove --name beyond_scale_diiv_coeff --all
 ```
 
+## Venv Install
+Create venv python environment:
+```bash
+deactivate
+# mkdir ~/.virtualenvs
+ls ~/.virtualenvs
+python3.11 -m venv ~/.virtualenvs/beyond_scale_div_coeff
+source ~/.virtualenvs/beyond_scale_div_coeff/bin/activate
+pip install --upgrade pip
+which python
+pip install -e ~/beyond-scale-language-data-diversity
+```
+
 ## Acknowledgements
-We acknowledge that code in `ginc/` was sourced from [the original GINC repo](https://github.com/p-lambda/incontext-learning). We thank [Rylan Schaeffer](http://rylanschaeffer.github.io/) for his contributions to updating the scripts in `ginc/` for ease of usage.
+We acknowledge that code in `ginc/` was sourced from [the original GINC repo](https://github.com/p-lambda/incontext-learning). 
+We thank [Rylan Schaeffer](http://rylanschaeffer.github.io/) for his contributions to updating the scripts in `ginc/` for ease of usage.
 
 ## Citation
 

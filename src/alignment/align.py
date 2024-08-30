@@ -64,7 +64,7 @@ def alignment_task2vec(dataset_target,
     Note: there is no sense of number of batches here, so num_batches = 1 effectively + if CIs needed need to be with wrt batch examples. 
     """
     # - Get target shuffled data
-    shuffled_dataset = dataset_source.shuffle(buffer_size=buffer_size, seed=seed) if shuffle else dataset
+    shuffled_dataset = dataset_source.shuffle(buffer_size=buffer_size, seed=seed) if shuffle else map_source
     raw_text_batch = shuffled_dataset.take(batch_size)
 
     # raw_text_batch = shuffled_dataset.take(batch_size) if streaming else shuffled_dataset.select(range(batch_size))
@@ -115,7 +115,7 @@ def alignment_task2vec(dataset_target,
                     'losses': losses,
                     "batch_size": batch_size}
     return results
-    
+
 # - Tests, examples
 
 def test_get_batch_from_dataset():
