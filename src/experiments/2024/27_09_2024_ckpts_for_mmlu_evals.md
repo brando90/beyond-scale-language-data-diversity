@@ -1,4 +1,4 @@
-#
+# Checkpoints to eval -log P^Vocab(CorrectChoice)
 
 ```
 # Note: example ckpt path
