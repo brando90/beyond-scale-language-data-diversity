@@ -1,6 +1,9 @@
 # Checkpoints to eval -log P^Vocab(CorrectChoice)
 
 ```
+# whole table: https://wandb.ai/brando/beyond-scale/table?nw=nwuserbrando
+
+
 # Note: example ckpt path
 # /lfs/ampere9/0/brando9/data/results_2024-m02-d03-t16h_32m_24s/checkpoint-1551
 
