@@ -44,3 +44,5 @@
 # /lfs/ampere9/0/brando9/data/results_2024-m01-d29-t16h_00m_55s
 # pubmed
 ```
+
+ssh brando9@ampere9.stanford.edu 
