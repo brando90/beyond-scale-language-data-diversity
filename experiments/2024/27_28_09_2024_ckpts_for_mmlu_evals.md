@@ -1,6 +1,6 @@
 # Checkpoints to eval -log P^Vocab(CorrectChoice)
 
-```
+```bash
 # whole table: https://wandb.ai/brando/beyond-scale/table?nw=nwuserbrando
 
 
@@ -45,4 +45,22 @@
 # pubmed
 ```
 
+Let's push the ckpts
+```bash
 ssh brando9@ampere9.stanford.edu 
+
+conda activate beyond_scale_div_coeff
+
+python ~/beyond-scale-language-data-diversity/src/push_hf_models_to_hf.py
+```
+
+Eval from RS:
+```bash
+
+conda create -n eleuther_lm_eval_harness_20240927 python=3.11
+
+conda activate eleuther_lm_eval_harness_20240927
+
+git clone --depth 1 https://github.com/EleutherAI/lm-evaluation-harness
+cd lm-evaluation-harness && pip install -e . && cd ..
+```

@@ -65,3 +65,35 @@ def prompt_temp_2_prompt_af_for_align(data_pt: dict, prompt_template: str = prom
     english: str = data_pt['english']
     prompt: str = prompt_template.replace("{$ENGLISH}", english)
     return prompt
+
+examples = [
+    ("theorem exercise_1_1a (x : ℝ) (y : ℚ) : ( irrational x ) -> irrational ( x + y ) :=",
+     "If $r$ is rational $(r \\neq 0)$ and $x$ is irrational, prove that $r+x$ is irrational."),
+    
+    ("theorem exercise_13_1 (X : Type*) [topological_space X] (A : set X) (h1 : ∀ x ∈ A, ∃ U : set X, x ∈ U ∧ is_open U ∧ U ⊆ A) : is_open A :=",
+     "Let $X$ be a topological space; let $A$ be a subset of $X$. Suppose that for each $x \\in A$ there is an open set $U$ containing $x$ such that $U \\subset A$. Show that $A$ is open in $X$."),
+    
+    ("theorem exercise_1_3 {F V : Type*} [add_comm_group V] [field F] [module F V] {v : V} : -(-v) = v :=",
+     "Prove that $-(-v) = v$ for every $v \\in V$."),
+    
+    ("theorem exercise_1_27 {n : ℕ} (hn : odd n) : 8 ∣ (n^2 - 1) :=",
+     "For all odd $n$ show that $8 \\mid n^{2}-1$."),
+    
+    ("theorem exercise_1_13a {f : ℂ → ℂ} (Ω : set ℂ) (a b : Ω) (h : is_open Ω) (hf : differentiable_on ℂ f Ω) (hc : ∃ (c : ℝ), ∀ z ∈ Ω, (f z).re = c) : f a = f b :=",
+     "Suppose that $f$ is holomorphic in an open set $\\Omega$. Prove that if $\\text{Re}(f)$ is constant, then $f$ is constant."),
+    
+    ("theorem exercise_2020_b5 (z : fin 4 → ℂ) (hz0 : ∀ n, ‖z n‖ < 1) (hz1 : ∀ n : fin 4, z n ≠ 1) : 3 - z 0 - z 1 - z 2 - z 3 + (z 0) * (z 1) * (z 2) * (z 3) ≠ 0 :=",
+     "For $j \\in\\{1,2,3,4\\}$, let $z_{j}$ be a complex number with $\\left|z_{j}\\right|=1$ and $z_{j} \\neq 1$. Prove that $3-z_{1}-z_{2}-z_{3}-z_{4}+z_{1} z_{2} z_{3} z_{4} \\neq 0 .$"),
+    
+    ("theorem exercise_2_12a (f : ℕ → ℕ) (p : ℕ → ℝ) (a : ℝ) (hf : injective f) (hp : tendsto p at_top (𝓝 a)) : tendsto (λ n, p (f n)) at_top (𝓝 a) :=",
+     "Let $(p_n)$ be a sequence and $f:\\mathbb{N}\\to\\mathbb{N}$. The sequence $(q_k)_{k\\in\\mathbb{N}}$ with $q_k=p_{f(k)}$ is called a rearrangement of $(p_n)$. Show that if $f$ is an injection, the limit of a sequence is unaffected by rearrangement."),
+    
+    ("theorem exercise_2_1_21 (G : Type*) [group G] [fintype G] (hG : card G = 5) : comm_group G :=",
+     "Show that a group of order 5 must be abelian.")
+]
+
+# Create the first prompt with 4 examples
+af_4_pf_val_prompt = prompt_af_for_align_zero_shot + str(examples[:4])
+
+# Create the second prompt with the remaining 8 examples
+af_8_pf_val_prompt = prompt_af_for_align_zero_shot + str(examples)
