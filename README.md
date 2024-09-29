@@ -12,9 +12,25 @@ This repository also contains code for generating GINC datasets and computing th
 `diversity/` contains the Task2Vec diversity coefficient computation for natural language data. [**See Quick-start**](https://github.com/alycialee/beyond-scale-language-data-diversity/blob/main/src/diversity/README.md#quick-start)
 ) for a tutorial of computing the diversity coefficient for a language dataset.** Run `diversity/runner.sh` to compute Task2Vec embeddings and diversity coefficient for c4, WikiText-103, and The Pile.
 
+When cloning your main repository in the future, you will need to initialize the submodules as well by using:
+```bash
+cd ~
+git clone --recurse-submodules https://github.com/<user>/beyond-scale-language-data-diversity.git
+```
+If you forget to use --recurse-submodules, you can still initialize the: 
+```bash
+git clone https://github.com/<user>/beyond-scale-language-data-diversity.git
+cd ~/beyond-scale-language-data-diversity
+git submodule update --init --recursive
+```
+Note: to push the changes to submodule cd there and do git cmds there.
+In the main repo folder to do git pushes/edits to the main repo code. 
+
+For all experiments including the `ginc` data set:
 `ginc/` contains Generative In-Context learning Dataset from [the original GINC repo](https://github.com/p-lambda/incontext-learning). 
 
-Run `ginc/runner_generate.sh` to generate GINC datasets with varying number of HMMs and number of symbols. Run `ginc/runner_train.sh` to train GPT-2 Transformers on GINC datasets using wandb.
+Run `ginc/runner_generate.sh` to generate GINC datasets with varying number of HMMs and number of symbols. 
+Run `ginc/runner_train.sh` to train GPT-2 Transformers on GINC datasets using wandb.
 
 ## Conda Install
 Create conda env:
