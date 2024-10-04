@@ -180,3 +180,4 @@ datasets/
 
 # images for expts
 avg_*.png
+*.svg
