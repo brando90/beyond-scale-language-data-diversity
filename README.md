@@ -15,7 +15,7 @@ This repository also contains code for generating GINC datasets and computing th
 When cloning your main repository in the future, you will need to initialize the submodules as well by using:
 ```bash
 cd ~
-git clone --recurse-submodules https://github.com/<user>/beyond-scale-language-data-diversity.git
+git clone --recurse-submodules git@github.com:brando90/beyond-scale-language-data-diversity.git
 ```
 If you forget to use --recurse-submodules, you can still initialize the: 
 ```bash
