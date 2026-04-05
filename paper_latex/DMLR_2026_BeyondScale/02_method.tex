@@ -55,15 +55,15 @@ After fine-tuning, we compute the FIM diagonal via Monte Carlo sampling of targe
 \REQUIRE Dataset $D$, probe network $f_w$ (GPT-2), number of batches $N$, batch size $|B|$
 \ENSURE Diversity coefficient $\hat{div}(D)$
 \STATE Initialize probe network $f_w$ with pretrained weights
-\FOR{$i = 1$ \TO $N$}
-    \STATE Sample batch $B_i \sim D$ of size $|B|$
-    \STATE Re-initialize language modeling head of $f_w$
-    \STATE Fine-tune head on $B_i$ for 5 epochs (AdamW, lr=$5 \times 10^{-5}$)
-    \STATE Compute FIM diagonal: $\vec{f}_{B_i} \leftarrow \text{Diag}(\hat{F}_{B_i})$
+\FOR{$i = 1$ to $N$}
+\STATE Sample batch $B_i \sim D$ of size $|B|$
+\STATE Re-initialize language modeling head of $f_w$
+\STATE Fine-tune head on $B_i$ for 5 epochs (AdamW, lr=$5 \times 10^{-5}$)
+\STATE Compute FIM diagonal: $\vec{f}_{B_i} \leftarrow \text{Diag}(\hat{F}_{B_i})$
 \ENDFOR
 \STATE Compute pairwise cosine distances: $d_{ij} = d(\vec{f}_{B_i}, \vec{f}_{B_j})$ for all $i < j$
 \STATE $\hat{div}(D) \leftarrow \frac{2}{N(N-1)} \sum_{i<j} d_{ij}$
-\RETURN $\hat{div}(D)$
+\STATE \textbf{return} $\hat{div}(D)$
 \end{algorithmic}
 \end{algorithm}
 
