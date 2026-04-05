@@ -1,0 +1,59 @@
+{
+  "agreement_rate": 0.8275862068965517,
+  "n_agree": 24,
+  "n_total": 29,
+  "n_errors": 0,
+  "cohens_kappa": 0.6551724137931034,
+  "per_pair_type": {
+    "c4_vs_bookcorpus": {
+      "agree": 3,
+      "total": 3,
+      "rate": 1.0
+    },
+    "bookcorpus_vs_c4": {
+      "agree": 2,
+      "total": 2,
+      "rate": 1.0
+    },
+    "wikitext_vs_bookcorpus": {
+      "agree": 1,
+      "total": 2,
+      "rate": 0.5
+    },
+    "bookcorpus_vs_wikitext": {
+      "agree": 4,
+      "total": 4,
+      "rate": 1.0
+    },
+    "bookcorpus_vs_openwebtext": {
+      "agree": 3,
+      "total": 3,
+      "rate": 1.0
+    },
+    "openwebtext_vs_bookcorpus": {
+      "agree": 3,
+      "total": 3,
+      "rate": 1.0
+    },
+    "c4_vs_openwebtext": {
+      "agree": 2,
+      "total": 3,
+      "rate": 0.6666666666666666
+    },
+    "openwebtext_vs_c4": {
+      "agree": 0,
+      "total": 3,
+      "rate": 0.0
+    },
+    "c4_vs_wikitext": {
+      "agree": 3,
+      "total": 3,
+      "rate": 1.0
+    },
+    "wikitext_vs_c4": {
+      "agree": 3,
+      "total": 3,
+      "rate": 1.0
+    }
+  }
+}

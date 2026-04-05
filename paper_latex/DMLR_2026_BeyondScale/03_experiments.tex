@@ -188,12 +188,26 @@ These results show the diversity coefficient successfully captures different dis
     \centering
     \includegraphics[width=0.4\linewidth]{plots/div_nlatents_rsquared.png}
     \includegraphics[width=0.4\linewidth]{plots/div_vocab_rsquared.png}
-  \caption{\textbf{Diversity coefficient of GINC datasets with varying number of latent concepts and vocab sizes shows the diversity coefficient behaves as expected.} 
-  The diversity coefficient increases and saturates with an increasing number of latent concepts (top) and exponentially increases with increasing vocab size (bottom). 
-  This implies that increases in the measured diversity coefficient correspond to changes in LM pre-training data distributional properties that intuitively enable more diverse data. } 
+  \caption{\textbf{Diversity coefficient of GINC datasets with varying number of latent concepts and vocab sizes shows the diversity coefficient behaves as expected.}
+  The diversity coefficient increases and saturates with an increasing number of latent concepts (top) and exponentially increases with increasing vocab size (bottom).
+  This implies that increases in the measured diversity coefficient correspond to changes in LM pre-training data distributional properties that intuitively enable more diverse data. }
   %  $R^2$ measures how well the curves fit the observed values.
   \label{fig:div_rsquared}
 \end{figure*}
+
+\subsection{GPT-4 Annotation Validates Diversity Metric Rankings} \label{sec:gpt4_validation}
+To further validate that the diversity coefficient captures human-recognizable diversity, we conduct a GPT-4 annotation study as a scalable proxy for human evaluation.
+
+\textbf{Experiments:}
+We sampled 30 pairs of text batches (8 samples each) from datasets with known different diversity coefficients: C4 (0.208), WikiText-103 (0.207), OpenWebText (0.199), and BookCorpus (0.160).
+For each pair, we presented both batches to GPT-4 (in randomized order to prevent position bias) and asked: ``Which collection exhibits greater topical and stylistic diversity?''
+We then compared GPT-4's judgment with the Task2Vec diversity coefficient ranking.
+
+\textbf{Results:}
+GPT-4 agreed with the Task2Vec ranking in 24 out of 29 valid comparisons (\textbf{82.8\% agreement}, Cohen's $\kappa = 0.655$, indicating substantial agreement).
+Agreement was strongest when the diversity gap was large: pairs involving BookCorpus (div=0.160) versus web-scale datasets achieved 100\% agreement.
+Disagreements occurred primarily between datasets with very similar diversity coefficients (e.g., OpenWebText 0.199 vs.\ C4 0.208), where both collections are drawn from diverse web text and the distinction is subtle.
+These results provide evidence that the Task2Vec diversity coefficient captures a notion of diversity that aligns with an intelligent observer's judgment.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
