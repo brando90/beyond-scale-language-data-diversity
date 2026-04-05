@@ -42,7 +42,30 @@ Formally, we compute the FIM as:
                     \nabla_w \log \hat p_w( \hat x_t | x_{t-1:1}) \nabla_w \log \hat p_w ( \hat x_t | x_{t-1:1})^\top
 \end{aligned}
 \end{equation*}
-The Task2Vec embedding $\vec{f}_B$ is the diagonal of the computed FIM, i.e. $\vec{f}_B = Diag(F_B)$, where $B$ represents a batch of text sequences, $x$ is a text sequence sampled from $B$, $\hat{x}_t$ is the next token predicted by the fine-tuned probe network $f_w$ (with weights $w$) conditioned on the ground truth sequence $x_{t-1:1}$, and $t$ is a given index of the sequence.
+The Task2Vec embedding $\vec{f}_B$ is the diagonal of the computed FIM, i.e. $\vec{f}_B = Diag(\hat{F}_B)$, where $B$ represents a batch of text sequences, $x$ is a text sequence sampled from $B$, $\hat{x}_t$ is the next token sampled from the fine-tuned probe network $f_w$ (with weights $w$) conditioned on the ground truth prefix $x_{t-1:1}$, and $t$ is a position index in the sequence (averaged over all positions).
+
+\paragraph{Precise fine-tuning protocol.}
+For each batch $B$, we fine-tune \textit{only} the language modeling head of the probe network (GPT-2) for 5 epochs using AdamW (learning rate $5 \times 10^{-5}$, weight decay $10^{-4}$).
+The probe network weights are \textit{not reset} between batches---the same pretrained GPT-2 backbone is used throughout, with only the head re-initialized per batch.
+After fine-tuning, we compute the FIM diagonal via Monte Carlo sampling of targets from the model's own distribution (not from the ground truth), following \citet{task2vec}.
+
+\begin{algorithm}[h]
+\caption{Computing the Diversity Coefficient}\label{alg:div_coeff}
+\begin{algorithmic}[1]
+\REQUIRE Dataset $D$, probe network $f_w$ (GPT-2), number of batches $N$, batch size $|B|$
+\ENSURE Diversity coefficient $\hat{div}(D)$
+\STATE Initialize probe network $f_w$ with pretrained weights
+\FOR{$i = 1$ \TO $N$}
+    \STATE Sample batch $B_i \sim D$ of size $|B|$
+    \STATE Re-initialize language modeling head of $f_w$
+    \STATE Fine-tune head on $B_i$ for 5 epochs (AdamW, lr=$5 \times 10^{-5}$)
+    \STATE Compute FIM diagonal: $\vec{f}_{B_i} \leftarrow \text{Diag}(\hat{F}_{B_i})$
+\ENDFOR
+\STATE Compute pairwise cosine distances: $d_{ij} = d(\vec{f}_{B_i}, \vec{f}_{B_j})$ for all $i < j$
+\STATE $\hat{div}(D) \leftarrow \frac{2}{N(N-1)} \sum_{i<j} d_{ij}$
+\RETURN $\hat{div}(D)$
+\end{algorithmic}
+\end{algorithm}
 
 \subsection{Computing the Diversity Coefficient for Natural Language Text}
 \label{body:div_coeff_natural_lang}

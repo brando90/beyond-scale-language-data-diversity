@@ -1,11 +1,24 @@
 \section{Related Work}
-Existing diversity metrics have concentrated on data produced by Generative Adversarial Networks (GANs) and involve variations of a precision- and recall-based framework originally proposed in \citep{sajjadi2018assessing} to measure quality and diversity, respectively \citep{kynkaanniemi2019improved, simon2019revisiting, naeem2020}. 
-Similar to our metric, these methods use embedding functions. 
-These methods argue data quality is not synonymous with data diversity in the context of GANs \citep{fowl2020random} and take a two-metric approach.
-Regarding LLMs, we argue that data diversity is a subset of data quality, which is demonstrably important to enable emergent capabilities such as in-context learning \cite{xie2022explanation, shin2022effect, chan2022data}. Recent work has also confirmed the importance of diversity from the perspective of deduplication \citep{tirumala2023d4}, and the general importance of quantitatively informed data selection \citep{xie2023doremi}.
-Hence, diversity metrics capture an important aspect of data quality.
- 
-A recently proposed diversity metric that doesn't rely on an embedding function is the Vendi Score \citep{friedman2022vendi}, which is the exponential of the Shannon entropy of the eigenvalues of a similarity matrix/kernel. For more discussion of related work, please see Appendix \ref{related_work_cont}.
+
+\paragraph{Diversity metrics.}
+Existing diversity metrics have concentrated on data produced by Generative Adversarial Networks (GANs) and involve variations of a precision- and recall-based framework originally proposed in \citep{sajjadi2018assessing} to measure quality and diversity, respectively \citep{kynkaanniemi2019improved, simon2019revisiting, naeem2020}.
+Similar to our metric, these methods use embedding functions, and argue data quality is not synonymous with data diversity in the context of GANs \citep{fowl2020random}.
+The Vendi Score \citep{friedman2022vendi} is a recently proposed metric defined as the exponential of the Shannon entropy of the eigenvalues of a similarity kernel.
+While elegant, it requires $O(N^2)$ kernel computation and eigendecomposition, which limits scalability to web-scale corpora; we provide a detailed comparison in Appendix~\ref{related_work_cont}.
+Simpler baselines such as N-gram diversity (distinct-to-total N-gram ratio) and mean embedding cosine distance are computationally cheap but do not capture structural task-level diversity; we compare against these baselines empirically in Section~\ref{sec:experiments}.
+
+\paragraph{Data curation and selection for LLMs.}
+A growing body of work demonstrates the critical role of data quality and diversity in LLM pre-training.
+Deduplication has been shown to improve training efficiency: SemDeDup \citep{abbas2023semdedup, abbas2024effective} uses embedding-based semantic deduplication, while D$^4$ \citep{tirumala2023d4} provides large-scale deduplication analysis.
+Data selection methods such as DoReMi \citep{xie2023doremi} and LESS \citep{xia2024less} optimize domain mixture weights, while LIMA \citep{zhou2023lima} demonstrates that a small amount of carefully curated data can produce strong instruction-following models.
+On the data construction side, large curated corpora including FineWeb \citep{penedo2024fineweb}, RefinedWeb \citep{penedo2023refinedweb}, Dolma \citep{soldaini2024dolma}, and DCLM \citep{li2024datacomp} have advanced the state of the art by improving data quality at scale.
+DataComp-LM \citep{li2024datacomp} provides a benchmark for data-centric approaches to language model development.
+Our work complements these efforts by providing a quantitative metric to \textit{measure} diversity rather than to \textit{select} or \textit{filter} data.
+
+\paragraph{Diversity and in-context learning.}
+Regarding LLMs, data diversity is demonstrably important to enable emergent capabilities such as in-context learning \citep{xie2022explanation, shin2022effect, chan2022data}.
+These works suggest that distributional properties of pre-training data, including diversity and burstiness, are key drivers of in-context learning, providing theoretical motivation for our diversity coefficient.
+For more discussion of related work, please see Appendix~\ref{related_work_cont}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
