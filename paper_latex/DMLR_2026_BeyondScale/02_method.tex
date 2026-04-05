@@ -11,9 +11,9 @@
 \end{figure*}
 
 Our aim is to formalize the concept of data diversity and empirically demonstrate, through \textit{interventional} experiments, its positive relationship with the evaluation performance of the validation set.  
-We estimate the diversity of a dataset through the Task2Vec diversity coefficient for natural language, which embeds randomly sampled batches of data using Task2Vec embeddings \citep{task2vec} and computes the expected cosine distance between these (see Figure \ref{fig:div_pipeline}). 
+We estimate the diversity of a dataset through the Task2Vec diversity coefficient for natural language, which embeds randomly sampled batches of data using Task2Vec embeddings \citep{task2vec} and computes the expected cosine distance between these (see Figure~\ref{fig:div_pipeline}). 
 It approximates the diversity of the dataset because distances between Task2Vec embeddings approximate the distance between the generative (task) distributions of the batches. 
-% To compute the diversity coefficient for a given dataset, we first randomly sample batches of text sequences from a given dataset, compute Task2Vec embeddings for each of these batches, and then finally compute the expected cosine distance between these embeddings to get the value of the diversity coefficient (see Figure \ref{fig:div_pipeline}). 
+% To compute the diversity coefficient for a given dataset, we first randomly sample batches of text sequences from a given dataset, compute Task2Vec embeddings for each of these batches, and then finally compute the expected cosine distance between these embeddings to get the value of the diversity coefficient (see Figure~\ref{fig:div_pipeline}). 
 % As we detail below, Task2Vec embeddings act as effective ``fingerprints" for the information that a given parameter contains for generating a batch of text \citep{task2vec, curse_low_div}. 
 % Thus, by measuring the level of variation in randomly sampled embeddings, we develop an accurate and effective quantitative estimate of the diversity of data.
 
@@ -93,13 +93,13 @@ Following the framework of the diversity coefficient, the cross diversity coeffi
      % \right]
 \end{aligned}
 \end{equation*}
-We introduce these two definitions (diversity and cross diversity) to show our results hold with respect to two intuitive and logical ways to define data diversity (details in Appendix \ref{appendix:cross_div_justification}).
+We introduce these two definitions (diversity and cross diversity) to show our results hold with respect to two intuitive and logical ways to define data diversity (details in Appendix~\ref{appendix:cross_div_justification}).
 In addition, the \textit{cross diversity} coefficient also measures the similarity/alignment or difference \textit{between} datasets (using Task2Vec representations of data).
 % such as when deciding which subcorpora to include in a large, diverse natural language corpus \citep{thepile}.
 
 % \section{Methods}\label{methods}
 % \subsection{Task2Vec Embeddings for Sequence Data} 
-% We use the Task2Vec diversity coefficient \citep{curse_low_div} to compute the formal diversity of a dataset, echoing the approach of \citep{nguyen2019understanding} in using Task2Vec to characterize data. We choose Task2Vec embeddings since they have been shown to be effective ``informational fingerprints" of embedded data by, at a high level, identifying which model weights are important in performing prediction on a given batch of text sequences \citep{task2vec} (see Appendix \ref{appendix:intuitiontask2vec} for further explanation).
+% We use the Task2Vec diversity coefficient \citep{curse_low_div} to compute the formal diversity of a dataset, echoing the approach of \citep{nguyen2019understanding} in using Task2Vec to characterize data. We choose Task2Vec embeddings since they have been shown to be effective ``informational fingerprints" of embedded data by, at a high level, identifying which model weights are important in performing prediction on a given batch of text sequences \citep{task2vec} (see Appendix~\ref{appendix:intuitiontask2vec} for further explanation).
 % The first step is to compute Task2Vec (vectorial) embeddings of a batch of sequences.
 % %and explain our extensions using LLMs. 
 % The original Task2Vec method \citep{task2vec} embeds data (e.g. few-shot learning task) using the diagonal entries of the Fisher Information Matrix (FIM) that result from (partially) fine-tuning the final layer of a fixed neural network (also called a \textit{probe network}) to solve the current task (or batch), similar in nature to \citep{edwards2017neural} with probe-network based data analysis.
@@ -149,7 +149,7 @@ In addition, the \textit{cross diversity} coefficient also measures the similari
 
 % By measuring the distance between FIMs, the diversity coefficient captures the average intrinsic variability of batches in the underlying data distribution as a proxy for data coverage or information contained in the dataset. 
 % %[TO-DO: fig, appendix]
-% Another interpretation is that dataset diversity reflects how different batches are from each other. See Figure \ref{fig:pipeline} in Appendix \ref{appendix:pipeline} for an illustration of this process.
+% Another interpretation is that dataset diversity reflects how different batches are from each other. See Figure~\ref{fig:pipeline} in Appendix~\ref{appendix:pipeline} for an illustration of this process.
 % %Therefore, a low diversity coefficient implies that batches are not very different.
 % \subsubsection{Definition of the Cross Diversity Coefficient}\label{cross_div_coeff}
 % The cross diversity coefficient computes the expected cosine distances of (Task2Vec) embeddings of batches by sampling each batch of sequences from only one of the two datasets, without any interleaving or mixing of the sequences between datasets. 
@@ -164,7 +164,7 @@ In addition, the \textit{cross diversity} coefficient also measures the similari
 % \end{aligned}
 % \end{equation*}
 % In this work, we use the term \textit{concatenated} when the sequences in each batch come only from a single data set. 
-% We introduce these two definitions (diversity and cross diversity) to show our results hold with respect to two intuitive and logical ways to define data diversity (details in Appendix \ref{appendix:cross_div_justification}).
+% We introduce these two definitions (diversity and cross diversity) to show our results hold with respect to two intuitive and logical ways to define data diversity (details in Appendix~\ref{appendix:cross_div_justification}).
 
 
 %%%%%%%%%%%%%%
@@ -175,8 +175,8 @@ In addition, the \textit{cross diversity} coefficient also measures the similari
 Overall, any strategy of concatenating datasets increases the cross diversity coefficient}.
 For the diversity coefficient, batches of text sequences were sampled from a mixed (i.e. interleaved) pool of sequences from all sub-datasets. Thus, sequences from both sub-datasets are present in the same batch at a rate dictated by the data mixture.
 Mix1 stands for a data mixture with ratio 3:1 (i.e., 0.75 to 0.25) for the corresponding combined data sets.
-Mix2 stands for a data mixture according to LLaMA v1 (i.e., 0.77, 0.23) for the corresponding combined data sets (see Appendix \ref{appendix:mixdetails} for details).
-Note, cross diversity does \textit{not} mix datasets when computing the corresponding coefficient. Instead, we sample batches entirely from one of the sub-datasets; the distance between batches is then used to compute the cross diversity (see Appendix \ref{appendix:cross_div_justification} for explanation).
+Mix2 stands for a data mixture according to LLaMA v1 (i.e., 0.77, 0.23) for the corresponding combined data sets (see Appendix~\ref{appendix:mixdetails} for details).
+Note, cross diversity does \textit{not} mix datasets when computing the corresponding coefficient. Instead, we sample batches entirely from one of the sub-datasets; the distance between batches is then used to compute the cross diversity (see Appendix~\ref{appendix:cross_div_justification} for explanation).
 }
 \vskip 0.15in
 \begin{center}
@@ -219,9 +219,9 @@ Upper Bound (UB) & $\textbf{0.4037} \pm 1.932\textrm{e-}5$ & (same as left)\\
 %%%%%%%%%%%%%%
 
 \subsection{Backbone Used to compute the Diversity Coefficient}
-To compute Task2Vec embeddings, we use GPT-2 \cite{gpt2} pre-trained on the English language as the probe network $f_w$. 
-Following Task2Vec \citep{task2vec}, we fine-tune only the final layer (a language modeling head) on each batch since it's the only tested method for computing Task2Vec embeddings \cite{task2vec, curse_low_div, miranda2023pretraining}, e.g. it's not known if the intuitive properties observed in \citep{task2vec} hold without fine-tuning the backbone. 
-See Figure \ref{fig:div_pipeline} for a visual of the diversity coefficient computation pipeline.
+To compute Task2Vec embeddings, we use GPT-2 \citep{gpt2} pre-trained on the English language as the probe network $f_w$.
+Following Task2Vec \citep{task2vec}, we fine-tune only the final layer (a language modeling head) on each batch since it's the only tested method for computing Task2Vec embeddings \citep{task2vec, curse_low_div, miranda2023pretraining}, e.g. it's not known if the intuitive properties observed in \citep{task2vec} hold without fine-tuning the backbone.
+See Figure~\ref{fig:div_pipeline} for a visual of the diversity coefficient computation pipeline.
 
 \subsection{Recipe for Establishing if a Diversity Coefficient is High via the Conceptual Lower and Upper Bounds }\label{method_ub_lb}
 To establish if a diversity coefficient $\hat{\textrm{div}}(D)$ of a dataset $D$ is high (or low), we use two conceptually well-motivated reference values.

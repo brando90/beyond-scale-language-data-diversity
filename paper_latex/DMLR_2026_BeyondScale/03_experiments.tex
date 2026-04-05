@@ -22,7 +22,7 @@ We want to emphasize that our results are \textit{interventional and not correla
 i.e., we intervene by constructing pre-training data sets of increasing diversity, train the models from scratch on these (controlling tokens), and finally demonstrate performance improves.  
 
 \textbf{Experiments: } 
-We computed the formal diversity coefficient (described in section \ref{body:div_coeff_natural_lang}) of three publicly available datasets (USPTO, PubMed, and the combination of USPTO+PubMed) with diversity values of 0.158, 0.168, and 0.195 respectively. 
+We computed the formal diversity coefficient (described in Section~\ref{body:div_coeff_natural_lang}) of three publicly available datasets (USPTO, PubMed, and the combination of USPTO+PubMed) with diversity values of 0.158, 0.168, and 0.195 respectively. 
 We then pre-trained GPT2s \citep{gpt2} models of size 51M, 117M, 204M, 345M, 810M, 1.5B parameters and LLaMAv2 7B \citep{llamav2} from scratch. 
 To ensure that the diversity of the dataset is the primary factor driving our results, we train all models using a fixed number of tokens and the same hyperparameters across the same experiment. 
 An experiment is considered to be the triplet of models trained with the USPTO, PubMed, and USPTO+PubMed. 
@@ -31,7 +31,7 @@ The LaMMAv2 7B model is trained on 6.36M tokens.
 For training runs with combined datasets, each batch has interleaved examples from both datasets with equal mixing proportions. 
 
 \textbf{Results: }
-Figure \ref{fig:div_vs_val_ce} demonstrates that as the diversity coefficient of the pre-training dataset increases, the evaluation performance improves. 
+Figure~\ref{fig:div_vs_val_ce} demonstrates that as the diversity coefficient of the pre-training dataset increases, the evaluation performance improves. 
 This key result follows because the cross-entropy loss on the validation falls on all 15 runs in \ref{fig:div_vs_val_ce}. 
 We evaluated on the validation set of C4 and OpenWebText2 which have diversity coefficients of 0.237 and 0.222. 
 We deliberately avoided selecting the Pile in order to minimize contamination issues that could potentially confound our results. 
@@ -43,16 +43,16 @@ Our results also have positive average $R^2$ values of approximately 0.79 for Op
 \subsection{Diversity Coefficients of Pre-training Data shows LLMs are Pre-trained on Formally Highly Diverse Data}
 
 \textbf{Experiments:} 
-We evaluate the diversity coefficient and cross diversity coefficient (both described in section \ref{body:div_coeff_natural_lang}) of ten publicly available LLM pre-training datasets (described in section \ref{appendix:datasets}).
-% We evaluate the cross diversity coefficient (described in section \ref{cross_div_coeff}) of eight publicly available LLM pre-training datasets (described in section \ref{section:datasets}).
-% We also compute the diversity coefficient (described in section \ref{div_coeff}) of ten publicly available LLM pre-training data sets (described in section \ref{section:datasets}).
+We evaluate the diversity coefficient and cross diversity coefficient (both described in Section~\ref{body:div_coeff_natural_lang}) of ten publicly available LLM pre-training datasets (described in Section~\ref{appendix:datasets}).
+% We evaluate the cross diversity coefficient (described in Section~\ref{cross_div_coeff}) of eight publicly available LLM pre-training datasets (described in Section~\ref{section:datasets}).
+% We also compute the diversity coefficient (described in Section~\ref{div_coeff}) of ten publicly available LLM pre-training data sets (described in Section~\ref{section:datasets}).
 We also compute the diversity and cross diversity coefficients of two concatenated datasets: 
 1) C4 and WikiText-103, and 
-2) five sub-datasets of The Pile: Pile-CC, HackerNews, NIH ExPorter, PubMed, and USPTO (Appendix \ref{appendix:concat_datasets}).
-In addition, we compute our conceptually well-motivated lower and upper bounds on the diversity coefficient (section \ref{method_ub_lb}).
+2) five sub-datasets of The Pile: Pile-CC, HackerNews, NIH ExPorter, PubMed, and USPTO (Appendix~\ref{appendix:concat_datasets}).
+In addition, we compute our conceptually well-motivated lower and upper bounds on the diversity coefficient (Section~\ref{method_ub_lb}).
 
 \textbf{Results:}
-Table \ref{tab:div} reports the aforementioned diversity and cross diversity coefficients. 
+Table~\ref{tab:div} reports the aforementioned diversity and cross diversity coefficients. 
 The key observations from our results are:
 \begin{itemize}
     \item The cross diversity coefficients of pre-training datasets tend to be \textbf{3-5 times greater than the theoretical lower bound and, on average, half the upper bound.} 
@@ -91,17 +91,17 @@ The key observations from our results are:
 \subsection{Concatenation of Datasets of Different Sources Produces Higher Measured Diversity}
 
 \textbf{Experiments:} 
-To show that the concatenation of different datasets produces high diversity datasets, we measure the cross diversity coefficient of C4 plus WikiText-103, as well as of the five sub-datasets of The Pile in Table \ref{tab:div}.
-To understand the source of this increased diversity, we plot in Figure \ref{fig:concat_div} the Task2Vec (cosine) distances between batches from individual datasets and distances of batches from the different datasets.
+To show that the concatenation of different datasets produces high diversity datasets, we measure the cross diversity coefficient of C4 plus WikiText-103, as well as of the five sub-datasets of The Pile in Table~\ref{tab:div}.
+To understand the source of this increased diversity, we plot in Figure~\ref{fig:concat_div} the Task2Vec (cosine) distances between batches from individual datasets and distances of batches from the different datasets.
 
 \textbf{Results:}
 Our key observations are:
 \begin{itemize}
     \item The cross diversity coefficient for the C4 and WikiText-103 concatenated dataset is 0.2711, about +0.03-0.05 higher than that of each individual dataset.
-    \item The cross diversity coefficient for the concatenation of the five sub-datasets of the Pile is 0.2939 (Table \ref{tab:div}), which is about +0.04-0.1 (Figure \ref{fig:concat_div}) that of each individual dataset.
-    % \item The concatenation of the five sub-datasets of The Pile achieves the highest diversity coefficient in Table \ref{tab:div}. 
+    \item The cross diversity coefficient for the concatenation of the five sub-datasets of the Pile is 0.2939 (Table~\ref{tab:div}), which is about +0.04-0.1 (Figure~\ref{fig:concat_div}) that of each individual dataset.
+    % \item The concatenation of the five sub-datasets of The Pile achieves the highest diversity coefficient in Table~\ref{tab:div}. 
 \end{itemize}
-This increase in diversity occurs because concatenating datasets produces higher pairwise Task2Vec distances between batches from different datasets (see Figure \ref{fig:concat_div}).
+This increase in diversity occurs because concatenating datasets produces higher pairwise Task2Vec distances between batches from different datasets (see Figure~\ref{fig:concat_div}).
 % This results in a higher diversity coefficient, since the coefficient is an average of all pairwise Task2Vec distances.
 Note that, this aligns with human intuition that combining data from heterogeneous sources increases the overall diversity of the data.
 
@@ -109,30 +109,30 @@ Note that, this aligns with human intuition that combining data from heterogeneo
 To increase our confidence in the diversity and cross diversity coefficient as diversity metrics, we study distributions of the Task2Vec (cosine) distances used to compute the coefficient.
 % In particular, we study if the grouping of these distances align with human conceptual and semantic understanding.
 % should we include the word intuitive? In particular, we study if the grouping of these distances align with human intuitive conceptual and semantic understanding.
-We examine the alignment of the grouping of these distances with (human) conceptual and semantic understanding in Figure \ref{fig:concat_div}.
+We examine the alignment of the grouping of these distances with (human) conceptual and semantic understanding in Figure~\ref{fig:concat_div}.
 
 \textbf{Experiments:}
 % We reason about relative pairwise distance distributions using knowledge of the data sources and composition. 
 We analyze Task2Vec (cosine) distances between batches from five sub-datasets of The Pile.
 We compare distances between batches of individual sub-datasets and distances across different sub-datasets.
-% We show the resulting histograms and violin plots in Figure \ref{fig:concat_div}. 
-% We also segment these distances between batches across C4 and WikiText-103 in Figure \ref{fig:concat_div}.
+% We show the resulting histograms and violin plots in Figure~\ref{fig:concat_div}. 
+% We also segment these distances between batches across C4 and WikiText-103 in Figure~\ref{fig:concat_div}.
 % todo, report that we computed the dist hist of C4 wikitext-103 hist for 8 pager, then add \item bellow for it
 
 \textbf{Results:}
 Our key observations are:
 \begin{itemize}
     % 1. histograms have modes related to number of datasets.
-    \item Figure \ref{fig:concat_div} (top, left) shows 3 modes. 
-    We confirm that the modes correspond to pairings of datasets in Figure \ref{fig:concat_div} (top, right). 
+    \item Figure~\ref{fig:concat_div} (top, left) shows 3 modes. 
+    We confirm that the modes correspond to pairings of datasets in Figure~\ref{fig:concat_div} (top, right). 
     For instance, the right-most mode, corresponding to distances with values higher than the cross diversity coefficient, consists of pairwise distances between C4 and WikiText-103 batches. 
     This confirms intuitive properties we'd expect, i.e. we'd expect 3 modes given 2 datasets ($C^2_2 + 2 = 3$).
-    \item Similarly to the preceding point, Figure \ref{fig:concat_div} (bottom, left) shows 15 modes, which is exactly the number expected in enumerating all possible pairs of batches from 5 datasets.\footnote{Given a 5 by 5 distance matrix, we'd expect the lower triangular portion plus the diagonal to be the number of pairings, so $C^5_2 + 5 = 15$.}
-    Due to overlaps in distance values we only see 11 modes in the Figure \ref{fig:concat_div} (bottom, right).
+    \item Similarly to the preceding point, Figure~\ref{fig:concat_div} (bottom, left) shows 15 modes, which is exactly the number expected in enumerating all possible pairs of batches from 5 datasets.\footnote{Given a 5 by 5 distance matrix, we'd expect the lower triangular portion plus the diagonal to be the number of pairings, so $C^5_2 + 5 = 15$.}
+    Due to overlaps in distance values we only see 11 modes in the Figure~\ref{fig:concat_div} (bottom, right).
     % \item We also observe that the combined datasets have an increased diversity coefficient compared to the individual data sets. 
     % We outlined this in the previous section, but we underscore it here to emphasize this semantic property.
     % \item We expect pairings of unrelated datasets to have higher cross diversity compared to pairings of related datasets.
-    % We observe this in Figure \ref{fig:concat_div} (right).
+    % We observe this in Figure~\ref{fig:concat_div} (right).
     % For the concatenated dataset of C4 and WikiText-103, the distribution of pairwise distances where one batch is from C4 and one is from WikiText-103 (right-most violin) is higher than that of individual datasets.
     % For the concatenated sub-datasets of The Pile, the violin plots for combinations of conceptually unrelated datasets group above the dotted line (e.g. Hacker News and PubMed), while the violin plots of technical subjects written similarly
     % \footnote{e.g. NIH ExPorter and PubMed Abstracts both contain academic, medicine-focused writing, and have the lowest distances (third violin from the right) among combinations of different datasets.} 
@@ -142,8 +142,8 @@ Our key observations are:
     %\item in ref to above C4, wikitext-103 add observations here, 3 modes mainly. 
     % \item We expect Pile-CC and HackerNews to cover the most diverse topics since they are broad web-scale datasets, unlike the remaining which are technical in nature.
     % Therefore, we anticipate 
-    % 1) these two to have the highest individual diversities, as shown in the first two violin plots in Figure \ref{fig:concat_div}, and
-    % 2) to have the highest increase when concatenated with other datasets, as shown in the 6th to the 12th violin plots when counting from the left, in Figure \ref{fig:concat_div}.
+    % 1) these two to have the highest individual diversities, as shown in the first two violin plots in Figure~\ref{fig:concat_div}, and
+    % 2) to have the highest increase when concatenated with other datasets, as shown in the 6th to the 12th violin plots when counting from the left, in Figure~\ref{fig:concat_div}.
     % \item Distances between batches from Pile-CC and HackerNews (sixth violin from the left) are the lowest among pairwise distances of concatenated datasets above the cross diversity coefficient.
     % This aligns with human conceptual intuition because the Pile-CC and HackerNews are the most similar in those sub-datasets, since they are both web-scale datasets. 
 \end{itemize}
@@ -154,21 +154,21 @@ These findings build trust in the cross diversity coefficient as a dataset diver
 % Distances between a task from Pile-CC and a task from HackerNews (sixth violin from the left) are distributed the lowest among pairwise distances above the diversity coefficient, which corresponds to the same line of reasoning.
 
 \subsection{Diversity Coefficient Captures LLM Pre-training Data Distributional Properties} \label{body:ginc}
-To instill further confidence in the diversity coefficient, we perform a correlation analysis with data distributional properties on the GINC dataset synthetic language dataset \cite{ginc}.
-GINC generates sequences by modeling how real documents are generated given a fixed number of latent document concepts through a mixture of Hidden Markov Models (HMM), where each HHM has a latent concept that models document statistics, e.g. wiki bio.
-Further details on GINC can be found in section \ref{appendix:ginc}.
+To instill further confidence in the diversity coefficient, we perform a correlation analysis with data distributional properties on the GINC dataset synthetic language dataset \citep{ginc}.
+GINC generates sequences by modeling how real documents are generated given a fixed number of latent document concepts through a mixture of Hidden Markov Models (HMM), where each HMM has a latent concept that models document statistics, e.g. wiki bio.
+Further details on GINC can be found in Section~\ref{appendix:ginc}.
 
 \textbf{Experiments:}
 Given that each GINC dataset is a mixture of HMMs with a fixed number of latent concepts (1-10,000), we plot how the diversity coefficient varies as the number of latent concepts increases for each dataset.
-We plot this in Figure \ref{fig:div_rsquared} (top) and fit a curve for GINC datasets with fixed vocabulary sizes of 50 and 150.
+We plot this in Figure~\ref{fig:div_rsquared} (top) and fit a curve for GINC datasets with fixed vocabulary sizes of 50 and 150.
 Then we fix the number of latent concepts at 5 and 5000 and similarly plot how increasing the vocabulary size for the GINC dataset (50-10,000 unique tokens) increases the diversity coefficient.
-We plot this in Figure \ref{fig:div_rsquared} (bottom) and fit a curve for GINC datasets with 5 latent concepts and 5000 latent concepts.
+We plot this in Figure~\ref{fig:div_rsquared} (bottom) and fit a curve for GINC datasets with 5 latent concepts and 5000 latent concepts.
 
 \textbf{Results:}
 Our observations are as follows:
 \begin{itemize}
     \item \textbf{Diversity coefficient increases with greater number of latent concepts.} 
-    Figure \ref{fig:div_rsquared} (top) shows adding more latent concepts increases the diversity coefficient with diminishing returns.
+    Figure~\ref{fig:div_rsquared} (top) shows adding more latent concepts increases the diversity coefficient with diminishing returns.
     We hypothesize that additional latent concepts introduce new and varied document-level statistics, resulting in an increase in the diversity coefficient.
     The $R^2$ is high, with values 0.952 and 0.898.
     \item The diversity coefficient eventually saturates as more latent concepts are added. 
@@ -176,7 +176,7 @@ Our observations are as follows:
     % We hypothesize this may be due to marginal increases in variation from increased overlap, 
     % e.g. wiki bios and autobiographical web pages may have syntactical and semantic similarities.
     \item \textbf{Diversity coefficient increases with larger vocabularies.}
-    Figure \ref{fig:div_rsquared} (bottom) shows the measured diversity coefficient increases at a seemingly exponential pace for larger vocab sizes.
+    Figure~\ref{fig:div_rsquared} (bottom) shows the measured diversity coefficient increases at a seemingly exponential pace for larger vocab sizes.
     The $R^2$ is high with values 0.993 and 0.984.
     % \item We hypothesize the growth might be exponential because scaling the number of tokens produces a more diverse dataset by vastly increasing the number of ways to represent any sequence.
     % More formally, given a sequence $x$ of length $T_x$ and vocab size $|V|$, the number of ways to represent that sequence is approximately $|V|^{T_x}$.
