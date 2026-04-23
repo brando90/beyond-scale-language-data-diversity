@@ -2,10 +2,10 @@
 
 \label{introduction}
 % SS's version of paper: https://www.overleaf.com/1745433387ggqnstcvcpcc#08618e
-Current trends in pre-training Large Language Models (LLMs) tend to concentrate on model and dataset size scaling \cite{chowdhery2022palm, nostalgebraist2022chinchilla, gpt4, google2023palm2}.
+Current trends in pre-training Large Language Models (LLMs) tend to concentrate on model and dataset size scaling \citep{chowdhery2022palm, nostalgebraist2022chinchilla, gpt4, google2023palm2}.
 Therefore, vast amounts of effort have been invested in understanding neural scaling laws---the power-law relationship between the loss of artificial deep networks and the \textit{size} of the pre-training dataset for a fixed compute budget \citep{hestness2017deep,rosenfeld2019constructive,henighan2020scaling,kaplan2020scaling,gordon2021data,hernandez2021scaling,jones2021scaling,zhai2022scaling,hoffmann2022training, clark2022unified, neumann2022scaling}.
 In addition, recent work focuses on training a fixed-size model but using very large, trillion-token datasets \citep{llama, llamav2}.
-However, the effectiveness of these systems also fundamentally relies on the quality \cite{longpre2023pretrainer}, variability and coverage of the pre-training data \cite{tatsu, david2010impossibility} and not only the \textit{size}. 
+However, the effectiveness of these systems also fundamentally relies on the quality \citep{longpre2023pretrainer}, variability and coverage of the pre-training data \citep{tatsu, david2010impossibility} and not only the \textit{size}. 
 In particular, the richness and variety of data, otherwise known as data diversity, is a key aspect of data quality that plays an important role in researchers' and practitioners' choice of pre-training corpora for general capabilities \citep{thepile, gpt3, llama, eldan2023tinystories, gunasekar2023textbooks}. 
 In other words, diverse data is high quality data when your goal is to instill \textit{general capabilities} in a model. 
 % Inspired from the NTL, define diverse dataset is high quality because it should be for general human capabilities.
@@ -17,7 +17,7 @@ In other words, diverse data is high quality data when your goal is to instill \
 
 In addition, experimental settings demonstrate that the level of variety and diversity in pre-training data is likely a strong causal factor in the development of in-context learning (ICL) in LLMs, an essential component of the versatility and generality of LLMs \citep{xie2022explanation, shin2022effect, chan2022data}. 
 % Unfortunately, however, data quality, diversity and coverage \cite{david2010impossibility} are often overlooked or discussed in vague and imprecise ways \cite{longpre2023pretrainer}. 
-However, data quality, diversity and coverage \cite{david2010impossibility} are often discussed in vague and imprecise ways \cite{longpre2023pretrainer}. 
+However, data quality, diversity and coverage \citep{david2010impossibility} are often discussed in vague and imprecise ways \citep{longpre2023pretrainer}. 
 Even in instances of quantitative approaches to data quality, methods are often not interpretable as to \textit{why} certain datasets are preferable over others, or require reference corpora and, thereby, limit the diversity of resulting datasets \citep{xie2023doremi, xie2023data}. 
 Hence, we propose to ground the discussion of data quality and, in particular, data diversity, through the Task2Vec \textit{diversity coefficient for natural language}---a metric using the expected distance between Task2Vec embeddings of data batches \citep{task2vec, curse_low_div} to quantify the level of structural and semantic diversity of natural language data, allowing researchers and practitioners to move beyond scale alone.
 % Hence, we propose to ground the discussion of data quality through the diversity coefficient \cite{curse_low_div}, a data coverage metric that moves beyond scale alone.
@@ -49,7 +49,7 @@ Hence, our key \textbf{contributions} are:
     % such as the fact that the distance between Task2Vec embeddings used by the coefficient reflect intuitive human notions of data similarity based on format and semantics, 
     % the coefficient increases as more datasets are concatenated, 
     the number of latent concepts increases, a richer vocabulary is used, or datasets are concatenated, then the diversity coefficient should increase.
-    \item We quantitatively demonstrate that public datasets for LLM pre-training exhibit \textit{high} diversity, by them to well-motivated lower and upper bounds for our diversity metric.
+    \item We quantitatively demonstrate that public datasets for LLM pre-training exhibit \textit{high} diversity by comparing them to well-motivated lower and upper bounds for our diversity metric.
     % \item Lastly, for ease of use of our method, we also study properties of different parameters for computing the formal diversity and therefore provide practitioners with simpler ways to evaluate the diversity coefficient.
     \item We provide evidence via \textbf{interventional} experiments with various GPT-2 and LLaMAv2 models that pre-training models on data with higher diversity coefficients leads to better downstream performance on language modeling for diverse evaluation corpora---totaling 44 models pre-trained from scratch of various sizes (54M  to 7B).
     % Finally, we conduct a comprehensive set of controlled \textit{interventional} experiments with GPT-2 and LLaMAv2 that demonstrates the diversity coefficient of pre-training data is a meaningful driver of downstream model evaluation performance---totaling 33 models trained of various sizes (54M  to 7B).

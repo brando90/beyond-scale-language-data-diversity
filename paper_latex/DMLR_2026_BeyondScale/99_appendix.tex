@@ -4,7 +4,7 @@ To better understand Task2Vec embeddings, observe that the (diagonal) of the FIM
 Therefore, it serves as a unique fingerprint, or feature vector, for a batch, which defines a task distribution; as such, this vector, in its entirety, is as large as the number of parameters of the probe network.
 Empirical findings in \citep{task2vec} show that Task2Vec embeddings cluster in a way that reflects semantics between different visual concepts, and that Task2Vec cosine distances are positively correlated with taxonomical distances.
 
-We will provide a rephrasing from the original Task2Vec \cite{task2vec} explaining why Task2Vec is captures the importance of the weights and therefore why it serves as a unique fingerprint for a task.
+We will provide a rephrasing from the original Task2Vec \citep{task2vec} explaining why Task2Vec is captures the importance of the weights and therefore why it serves as a unique fingerprint for a task.
 The importance of a weight in a network can be measured by how much the predictions changes (average KL divergence of the original vs perturbed output) with respect to the loss of interest to target task.
 Consider a perturbation of the weights $w' = w + \delta_w$.
 This is the a 2nd-order approximation to the change in outputs:
@@ -13,11 +13,11 @@ E_{x ~\sim \hat{p}}[KL(p_w' || p_w)] = \delta_w F \delta_w^\top + o(\delta(w)^2)
 $$
 Therefore, the information content of the weights is measured by this change in output captured by the Fisher Information Matrix.
 Therefore, this serves as a unique finger-print of which parameters are important, making the diagonal of F a strong candidate for the unique fingerprint of a task via importance of weight.
-For a relation between Task2Vec and Kolmogorov Complexity, see section \ref{kolmogorov_fisher_relation}.
+For a relation between Task2Vec and Kolmogorov Complexity, see Section~\ref{kolmogorov_fisher_relation}.
 
 \section{Related Work (cont.)}\label{related_work_cont}
 
-% Other approaches to data-centric Machine Learning involve efficiently cleaning datasets by pruning pre-training datasets through the discard of weak examples, aiming to disrupt the power-law relationship between loss and performance \citep{abbas2024effective} \cite{}
+% Other approaches to data-centric Machine Learning involve efficiently cleaning datasets by pruning pre-training datasets through the discard of weak examples, aiming to disrupt the power-law relationship between loss and performance \citep{abbas2024effective} \citep{}
 
 Building on the success of deep learning data representations, we demonstrate deep learning is a strong way to create dataset/task embeddings.
 In contrast to the Vendi Score, our approach learns effective embeddings of datasets in an end-to-end manner, whereas the Vendi Score is focused on measuring diversity between specific data points. 
@@ -34,7 +34,7 @@ However, the benefits of this more sophisticated aggregation method are not clea
 Moreover, it assumes a suitable similarity function/kernel, and does not provide guidance on data representation, arguably the most important ingredient in machine learning. 
 Furthermore, they suggest that utilizing data representational methods such as embedding networks that require pretrained models may be limiting.
 We argue instead that data representation is a fundamental property of data processing that has led to the overwhelming success in machine learning due to deep learning, e.g. in computer vision \citep{alexnet, resnet}, natural language processing \citep{bert, gpt3, chowdhery2022palm, gpt4, google2023palm2}, game playing \citep{alphago, atari1, EfficientZero}, theorem proving \citep{skiptree, gptf, pact}, code \citep{codex} and more.
-For further comments on the Vendi Score see section \ref{related_work_cont}.
+For further comments on the Vendi Score see Section~\ref{related_work_cont}.
 
 \section{Justification of Task Based (Task2Vec) Diversity vs Activation, Token, and Model Agnostic based Diversity Formalizations}
 One could potentially have used different data and task representations to formalize diversity.
@@ -67,7 +67,7 @@ We focused only on that range because CKA and PWCCA became flat very quickly---j
 The data generation distribution $D$ was uniform independently sampled random tokens. 
 The batch-size $B$ was $32$ with sequence length $T$ equal to 240 and the number of batches we used for the expectation was $30$. 
 We also made sure the dimensionality $D=768$ of the activation matrix was $10$ times smaller than the $TB = 240 * 32 = 7,680$. 
-This last condition is crucial for CKA, PWCCA distances to not be vacuous \cite{svcca, curse_low_div}. 
+This last condition is crucial for CKA, PWCCA distances to not be vacuous \citep{svcca, curse_low_div}. 
 Intuitively, this happens because one has more features than effective data points and say CCA tries to maximize linear correlation vectors between the two datasets that can always be done perfectly with too many features. 
 
 \textbf{Experimental Interpretation: }
@@ -139,10 +139,10 @@ Since, Kolmogorov Complexity in uncomputable we conjecture this is approximately
 
 % TODO: finish perhaps connect Fisher and Kolmogorov: https://www.overleaf.com/project/616da56221637be4a0b6b5e0
 % \subsection{Distance of a task according to Task2Vec and related work}
-% In this section we will give our review of related work by \cite{Achille_dist_tasks, task2vec} to define distances between task, complexity, embeddings of tasks and related concepts.
+% In this section we will give our review of related work by \citep{Achille_dist_tasks, task2vec} to define distances between task, complexity, embeddings of tasks and related concepts.
 % \subsubsection{Static Distance between tasks}
-% To define the static distance between tasks \cite{Achille_dist_tasks} first define the complexity of a task then define the static distance using the complexity of a task.
-% \textbf{Task:} \cite{Achille_dist_tasks} define a task $\tau$ as the r.v. $y$ one is trying to infer given $x$ or the representing data set for the random variables with a loss function.
+% To define the static distance between tasks \citep{Achille_dist_tasks} first define the complexity of a task then define the static distance using the complexity of a task.
+% \textbf{Task:} \citep{Achille_dist_tasks} define a task $\tau$ as the r.v. $y$ one is trying to infer given $x$ or the representing data set for the random variables with a loss function.
 % We also consider that definition and the usual k-shot, n-way few-shot learning definitions of tasks.
 % \textbf{Ideal Complexity of a task:} The complexity $C(\tau)$ of a task $\tau$ should be a metric that captures the difficulty/complexity (e. best length, optimal encoding length) to approximately describe a task given a model $m$.
 % Recall that the Kolmogorov complexity $k(x)$ does this for bit strings $x$ - where $k(x)$ is the shortest program (assuming a fixed programming language) to output $x$ and halt.
@@ -152,13 +152,13 @@ Since, Kolmogorov Complexity in uncomputable we conjecture this is approximately
 %     S_{\tau}(l) = \min_{m \in \mathcal M : L_\tau(m) < l}{ k(m) }
 % \end{equation}
 % where $m$ is the model, $\mathcal M$ is the model class, $k$ is the kolmogorov complexity, $L_\tau(m)$ is the loss of model $m$ on task $\tau$ (e.g. cross-entropy loss) and $l$ is the target loss.
-% This function is also called the Kolmogrov Structure Function \cite{Achille_dist_tasks}.
+% This function is also called the Kolmogrov Structure Function \citep{Achille_dist_tasks}.
 % Using standard optimization techniques the complexity of a task $\tau$ can be re-written in Lagrangian form:
 % \begin{equation}
 %    C_{\beta}(\tau; m)  = L_{\tau}(m) + \beta k(m)
 % \end{equation}
 % for a certain $\beta$ this corresponds to a certain complexity and loss value $l_{\beta}$.
-% Intuitively, this measure the cost of encoding $\tau$ (or the data set) using model $m$ when the cost the model $k(m)$ is discounted by a factor of $\beta$ \cite{Achille_dist_tasks}.
+% Intuitively, this measure the cost of encoding $\tau$ (or the data set) using model $m$ when the cost the model $k(m)$ is discounted by a factor of $\beta$ \citep{Achille_dist_tasks}.
 % Thus \textbf{the complexity of a task} $\tau$ (or data set) with level $\beta$ is:
 % \begin{equation}
 %    C_{\beta}(\tau) = \min_{m \in \mathcal M} C_{\beta}(\tau; m)  = \min_{m \in \mathcal M} L_{\tau}(m) + \beta k(m)
@@ -174,31 +174,31 @@ Since, Kolmogorov Complexity in uncomputable we conjecture this is approximately
 \label{appendix:datasets}
 Since LLMs are often trained on internal, non-public datasets\footnote{For instance, Gopher was trained on Google's internal dataset MassiveText.}, we used publicly available language datasets from the same sources as LLM pre-training data:
 
-\textbf{C4}, a 305GB cleaned version of Common Crawl's web crawl corpus in English \cite{C4}. Sequences in C4 were extracted from the web via de-duplication methods and heuristics to remove boiler-plate and gibberish.
+\textbf{C4}, a 305GB cleaned version of Common Crawl's web crawl corpus in English \citep{C4}. Sequences in C4 were extracted from the web via de-duplication methods and heuristics to remove boiler-plate and gibberish.
 
-\textbf{WikiText-103}, a 500MB collection of over 100 million tokens extracted from the set of verified Good and Featured articles on Wikipedia \cite{wikitext}. 
+\textbf{WikiText-103}, a 500MB collection of over 100 million tokens extracted from the set of verified Good and Featured articles on Wikipedia \citep{wikitext}. 
 
-\textbf{The Pile}, a 825 GiB open-source English-text corpus for language modeling that combines 22 smaller, high-quality datasets from diverse sources \cite{thepile}. These sources include Pile-CC (Common Crawl), PubMed Abstracts, Books3, OpenWebText2, ArXiv, and GitHub. 
+\textbf{The Pile}, a 825 GiB open-source English-text corpus for language modeling that combines 22 smaller, high-quality datasets from diverse sources \citep{thepile}. These sources include Pile-CC (Common Crawl), PubMed Abstracts, Books3, OpenWebText2, ArXiv, and GitHub. 
 
 \textbf{SlimPajama},
-an open-source reproduction of the LLaMA v1 dataset with extensively deduplication. It incorporates data from CommonCrawl (CC), C4, GitHub, Books, ArXiv, Wikipedia, and StackExchange, totaling 627 billion tokens \cite{cerebras2023slimpajama}.
+an open-source reproduction of the LLaMA v1 dataset with extensively deduplication. It incorporates data from CommonCrawl (CC), C4, GitHub, Books, ArXiv, Wikipedia, and StackExchange, totaling 627 billion tokens \citep{cerebras2023slimpajama}.
 % RedPajama is an open-source implementation of the LLaMa v1 dataset, incorporating data from CommonCrawl (CC), C4, GitHub, Books, ArXiv, Wikipedia, and StackExchange, totaling 1.2 trillion tokens.
 % Slim Pajamas is extensively deduplicate RedPajama. % to produce a dataset with higher information density that achieves higher accuracy with same compute. 
 % This means when using SlimPajama, you can achieve higher accuracy with the same compute budget when compared to other datasets.
 
-For instance, GPT-3 was trained on a filtered Common Crawl dataset and Wikipedia \cite{gpt3}, which are represented by C4 and WikiText-103. It was also trained on WebText2 and Books, which are sub-datasets of The Pile.
+For instance, GPT-3 was trained on a filtered Common Crawl dataset and Wikipedia \citep{gpt3}, which are represented by C4 and WikiText-103. It was also trained on WebText2 and Books, which are sub-datasets of The Pile.
 
 We also evaluate the diversity coefficient of the following six sub-datasets of The Pile:
 
-\textbf{Pile-CC}, a 227 GiB preprocessed version of Common Crawl's web crawl corpus \cite{thepile}. While both Pile-CC and C4 are sourced from Common Crawl, Pile-CC was preprocessed from Web Archive files, which are raw HTTP responses and page HTML, whereas C4 was preprocessed from WET files, which consist of plaintext. Nonetheless, we expect that both datasets are non-mutually-exclusive.
+\textbf{Pile-CC}, a 227 GiB preprocessed version of Common Crawl's web crawl corpus \citep{thepile}. While both Pile-CC and C4 are sourced from Common Crawl, Pile-CC was preprocessed from Web Archive files, which are raw HTTP responses and page HTML, whereas C4 was preprocessed from WET files, which consist of plaintext. Nonetheless, we expect that both datasets are non-mutually-exclusive.
 
-\textbf{HackerNews}, a 4 GiB scraped and parsed dataset of comment trees from Hacker News, a social news website that aggregates article links \cite{thepile}. Articles are generally focused on topics in computer science and entrepreneurship.
+\textbf{HackerNews}, a 4 GiB scraped and parsed dataset of comment trees from Hacker News, a social news website that aggregates article links \citep{thepile}. Articles are generally focused on topics in computer science and entrepreneurship.
 
-\textbf{NIH ExPorter}, a 1.9 GiB dataset of NIH Grant abstracts for awarded applications from 1985-present hosted on the ExPORTER initiative \cite{thepile}.
+\textbf{NIH ExPorter}, a 1.9 GiB dataset of NIH Grant abstracts for awarded applications from 1985-present hosted on the ExPORTER initiative \citep{thepile}.
 
-\textbf{PubMed Abstracts}, a 19 GiB dataset of abstracts from 30 million publications in PubMed \cite{thepile}.
+\textbf{PubMed Abstracts}, a 19 GiB dataset of abstracts from 30 million publications in PubMed \citep{thepile}.
 
-\textbf{USPTO Backgrounds}, a 23 GiB dataset of background sections from patents granted by the United States Patent and Trademark Office (USPTO) \cite{thepile}.
+\textbf{USPTO Backgrounds}, a 23 GiB dataset of background sections from patents granted by the United States Patent and Trademark Office (USPTO) \citep{thepile}.
 
 \textbf{OpenWebText2}, a 38 GiB dataset based on data extracted from Reddit posts, deduplicated, and filtered for English content using FastText. 
 % Web pages were pulled using the newspaper python package, and near-duplicates were identified and removed using local-sensitivity hashing (LSH). 
@@ -209,7 +209,7 @@ The finalized dataset comprises 38 GiB. % from 8,013,769 documents.
 % Used to train GPT2.
 
 % These five sub-datasets were selected for streaming support on HuggingFace, and for relatively efficient streaming time. 
-%See Appendix \ref{appendix:experiment_details} for dataset preprocessing and experimental details.
+%See Appendix~\ref{appendix:experiment_details} for dataset preprocessing and experimental details.
  
 
 \section{Further Justification and Explanation of Cross Diversity}
@@ -221,10 +221,10 @@ We include the notion of the cross diversity coefficient as it also leverages th
 \label{appendix:ground_truth_div}
 \begin{figure*}[h]
     \centering \includegraphics[width=0.5\columnwidth]{plots/truth_vs_task2vec.png}
-    \caption{\textbf{Task2Vec diversity coefficient correlates with ground truth diversity for synthetic Gaussian benchmark.} Source: \cite{diversity}}
+    \caption{\textbf{Task2Vec diversity coefficient correlates with ground truth diversity for synthetic Gaussian benchmark.} Source: \citep{diversity}}
 \end{figure*}
 
-As shown in \cite{diversity}, when the ground truth diversity is available for a synthetic Gaussian benchmark, the Task2Vec diversity coefficient correlates with the ground truth diversity. These results provide confidence in the Task2Vec diversity coefficient as diversity metric.
+As shown in \citep{diversity}, when the ground truth diversity is available for a synthetic Gaussian benchmark, the Task2Vec diversity coefficient correlates with the ground truth diversity. These results provide confidence in the Task2Vec diversity coefficient as diversity metric.
 
 % \section{Pipeline for Diversity Coefficient Computation of Natural Language Datasets}
 % \label{appendix:pipeline}
@@ -236,10 +236,10 @@ As shown in \cite{diversity}, when the ground truth diversity is available for a
 %   \label{fig:pipeline}
 % \end{figure}
 
-Figure \ref{fig:div_pipeline} shows our pipeline for computing the diversity coefficient of large scale, natural language datasets. See section \ref{body:div_coeff_natural_lang} for more details on our method.
+Figure~\ref{fig:div_pipeline} shows our pipeline for computing the diversity coefficient of large scale, natural language datasets. See Section~\ref{body:div_coeff_natural_lang} for more details on our method.
 
 \section{Higher Formal Diversity of the Training Data Set Causes Higher Test Performance}
-Table \ref{tab:div_vs_ppl} demonstrates the causal relationship between pre-training data diversity and downstream evaluation performance on a diverse target domain. 
+Table~\ref{tab:div_vs_ppl} demonstrates the causal relationship between pre-training data diversity and downstream evaluation performance on a diverse target domain. 
 
 \subsection{Higher Formal Diversity of the Training Data Set Causes Higher Test Performance: GPT2 Results}
 
@@ -306,7 +306,7 @@ Table \ref{tab:div_vs_ppl} demonstrates the causal relationship between pre-trai
 % \end{table*}
 
 \subsection{Higher Formal Diversity of the Training Data Set Causes Higher Test Performance: All Results}
-Table \ref{tab:div_vs_ce_val} demonstrates how the cross-entropy of the validation loss decreases as the diversity of the pre-training data set increases. 
+Table~\ref{tab:div_vs_ce_val} demonstrates how the cross-entropy of the validation loss decreases as the diversity of the pre-training data set increases. 
 All tokens were fixed. 
 The table includes LLaMAv2 7B results trained from scratch.
 
@@ -319,7 +319,7 @@ All evaluations were on the full validation set except for the ones denoted as [
 C4's validation set has 365K examples. 
 OpenWebText2 had 33.4k examples. 
 We explicitly avoided evaluating on the pile to minimize cofounders on our experiments, e.g., that the good performance might be due to data contamination. 
-We also evaluated on two data sets for the same reasons and to increase robustness of our observations. Table entries are continued in Table \ref{tab:div_vs_ce_val_cont}.
+We also evaluated on two data sets for the same reasons and to increase robustness of our observations. Table entries are continued in Table~\ref{tab:div_vs_ce_val_cont}.
 }
 \vspace{10pt}
 \centering
@@ -362,7 +362,7 @@ LLaMA2-7B (Scratch, run4) & 6.36M (1024 L) & USPTO  & 7.94 (2826.9) & 7.14 (1267
 
 
 \begin{table*}[h]
-\caption{\textbf{Continuation of Table \ref{tab:div_vs_ce_val}.}}
+\caption{\textbf{Continuation of Table~\ref{tab:div_vs_ce_val}.}}
 \vspace{10pt}
 \centering
 \begin{tabularx}{1\textwidth}{lXXXX} 
@@ -446,9 +446,9 @@ GPT2-204M & 1.31B (1024 L) & USPTO  & 6.16 (473.4) & 5.40 (221.4) \\
 %     \item It is simple to define given the definition of cross diversity proposed in this paper.
 %     \item It provides simple confidence interval to compute given that it's an expectation---in contrast to using a large batch of data and the cosine distance of two Task2vec batch/task embeddings.
 % \end{enumerate}
-% Figure \ref{fig:align_corr} demonstrates that there is a moderate-strong relationship between the alignment coefficient (between pre-train data and evaluation data) and model performance (cross entropy loss) on various evaluation datasets ($r^2 = 0.80, r=-0.89$).
+% Figure~\ref{fig:align_corr} demonstrates that there is a moderate-strong relationship between the alignment coefficient (between pre-train data and evaluation data) and model performance (cross entropy loss) on various evaluation datasets ($r^2 = 0.80, r=-0.89$).
 % The raw alignment values with 95\% confidence are reported at \ref{fig:align_table} and, as expected, when datasets share similarities in topic and structure, the alignment coefficient is higher (see caption of table).
-% In addition, Figure \ref{fig:outputs_are_good_despite_high_loss} shows that despite the arguably high loss, the models are pre-trained enough to grasp important aspects of sentence syntax and structure of their respective dataset.
+% In addition, Figure~\ref{fig:outputs_are_good_despite_high_loss} shows that despite the arguably high loss, the models are pre-trained enough to grasp important aspects of sentence syntax and structure of their respective dataset.
 
 %\textbf{The data alignment coefficient demonstrates a solid relationship to model performance (cross entropy loss) on various evaluation datasets ($r^2 = 0.80, r=0.89$)}. 
     %The data alignment coefficient is computed between a model's pre-training dataset (PubMed Abs., USPTO, or PubMed Abs. + USPTO) and a single evaluation dataset (represented by a unique color).
@@ -510,7 +510,7 @@ GPT2-204M & 1.31B (1024 L) & USPTO  & 6.16 (473.4) & 5.40 (221.4) \\
 We test the sensitivity of the computed diversity coefficient value to changes in batch size and probe network parameters in order to gauge how these parameters should be set in practice for natural language datasets. 
 
 We vary the batch size and observe the impact on the diversity coefficient. 
-For the same number of batches (200) and probe network (pretrained, fine-tuned GPT-2), we computed the diversity coefficient of C4 for batch sizes of 128, 256, 512, and 1024, and plot the results in Figure \ref{fig:batchsize_network_experiments} (left).
+For the same number of batches (200) and probe network (pretrained, fine-tuned GPT-2), we computed the diversity coefficient of C4 for batch sizes of 128, 256, 512, and 1024, and plot the results in Figure~\ref{fig:batchsize_network_experiments} (left).
 
 We test the following probe network configurations to measure the diversity coefficient of C4 and of WikiText-103:
 1. Pretrained GPT-2 with fine-tuning,
@@ -524,9 +524,9 @@ We test the following probe network configurations to measure the diversity coef
 %     \item Randomly initialized GPT-2 with fine-tuning
 %     \item Randomly initialized GPT-2 without fine-tuning
 % \end{itemize}
-Since using a random and/or non fine-tuned network is more resource efficient and easily accessible in practice, our motivation is to assess the necessity of using pre-trained and fine-tuned probe network, which is the original configuration used for Task2Vec in \cite{task2vec}. 
+Since using a random and/or non fine-tuned network is more resource efficient and easily accessible in practice, our motivation is to assess the necessity of using pre-trained and fine-tuned probe network, which is the original configuration used for Task2Vec in \citep{task2vec}. 
 We aim to determine if a good approximation of diversity can be computed without fine-tuning. 
-This setting is shown in Figure \ref{fig:batchsize_network_experiments} (right).
+This setting is shown in Figure~\ref{fig:batchsize_network_experiments} (right).
 
 \begin{figure*}[h]
     \centering
@@ -540,7 +540,7 @@ This setting is shown in Figure \ref{fig:batchsize_network_experiments} (right).
 \begin{itemize} %% use this if moved to main body
 % \begin{itemize}
     \item \textbf{Diversity coefficient increases with task batch size, but with diminishing returns.} 
-    Figure \ref{fig:batchsize_network_experiments} (left) shows positive correlation between the diversity coefficient and batch size. 
+    Figure~\ref{fig:batchsize_network_experiments} (left) shows positive correlation between the diversity coefficient and batch size. 
     This may be because larger batch sizes enable more unique tokens per batch.
     % , which may result in higher distances between batches. 
     % \item However, we observe diminishing returns to the increase in diversity coefficient with increasing batch size. 
@@ -548,30 +548,30 @@ This setting is shown in Figure \ref{fig:batchsize_network_experiments} (right).
     % We hypothesize that as the batch size continues to increase, there is greater coverage in tokens, topics, document formats, etc. between batches, so the increase in the diversity coefficient saturates.
     \item \textbf{Coefficients from using random probe networks likely diverge from using pre-trained networks.} 
     Since the Task2Vec method \citep{task2vec} uses a pretrained fine-tuned network, we consider the diversity computed using this configuration as a source of truth. 
-    Figure \ref{fig:batchsize_network_experiments} (left) shows that using a random probe network underestimates diversity compared to pretrained networks, which is in accordance with results from \cite{diversity} on vision datasets and indicative of random networks' estimates diverging from pre-trained networks'. 
+    Figure~\ref{fig:batchsize_network_experiments} (left) shows that using a random probe network underestimates diversity compared to pretrained networks, which is in accordance with results from \citep{diversity} on vision datasets and indicative of random networks' estimates diverging from pre-trained networks'. 
     % We hypothesize that for random networks, the probe network parameters are not as calibrated to performing autoregressive language modeling, so batch representations from model parameters are similar, and the diversity is underestimated compared to pretrained networks.
     \item \textbf{Using a non-fine-tuned pre-trained network overestimates diversity.} 
     % Since the network is not fine-tuned, the activations may not represent a good learning of the batches.
     % This may introduce greater variability in the probe network activations between batches, so pairs of batches have higher Task2Vec (cosine) distance than batches embedded by fine-tuned networks. 
-    % Lightly fine-tuning (the final layer \cite{task2vec}) of the probe network ensures the final Task2Vec embedding is more faithful to the dataset in question, as it adjusts the batch/task representation to a more similar distribution.
+    % Lightly fine-tuning (the final layer \citep{task2vec}) of the probe network ensures the final Task2Vec embedding is more faithful to the dataset in question, as it adjusts the batch/task representation to a more similar distribution.
     % This is due to batches---while different content-wise---being conditioned on the same dataset.
     % On the other hand, a non-fine-tuned network may have more variable representations across batches, as it is not well-adapted to the dataset. 
     % This may explain the overestimation of the diversity coefficient that we observe.
     \item Trends in diversity coefficient overestimation vs. underestimation for different probe network configurations are consistent across C4 and WikiText-103.
 \end{itemize}
 Based on these findings, we recommend using a batch size of 512 sequences for faster computations and fewer out of memory issues and pre-trained fine-tuned network.
-Since the other setting's diversity difference is large from the ground truth \cite{task2vec}, we can't recommend it. 
+Since the other setting's diversity difference is large from the ground truth \citep{task2vec}, we can't recommend it. 
 If the intuitive properties reproduce for the other two options, we'd recommend it, but this is left for future work.  
 % Based on these findings, we recommend using a batch size of 512 sequences for faster computations and fewer out of memory issues. 
 % We conjecture that our proposed diversity coefficient can be computed more efficiently using random and non fine-tuned networks, as eliminating pre-training and fine-tuning saves computational costs. 
-% While the absolute diversity coefficient values differ compared to values computed using a pre-trained and fine-tuned network, this is not a serious issue as long as the same network configuration is used consistently  (see section \ref{appendix:discussion_cont}).
+% While the absolute diversity coefficient values differ compared to values computed using a pre-trained and fine-tuned network, this is not a serious issue as long as the same network configuration is used consistently  (see Section~\ref{appendix:discussion_cont}).
 % Further validation is required to determine if indeed forgoing pre-trained and/or fine-tuned probe networks can produce as robust embeddings as the original Task2Vec method.
 
 \section{Experimental Details}
 \label{appendix:experiment_details}
 
 \subsection{Dataset Preprocessing}
-In accordance with \cite{task2vec}, we used the training split of datasets to finetune the probe network when computing Task2Vec embeddings per dataset. Sequences were tokenized using a pre-trained HuggingFace GPT-2 tokenizer based on byte-level Byte-Pair-Encoding, and padded or truncated to a max length of $128$. Because the WikiText-103 dataset contained empty text examples, we removed these examples before sampling batches to compute embeddings. 
+In accordance with \citep{task2vec}, we used the training split of datasets to finetune the probe network when computing Task2Vec embeddings per dataset. Sequences were tokenized using a pre-trained HuggingFace GPT-2 tokenizer based on byte-level Byte-Pair-Encoding, and padded or truncated to a max length of $128$. Because the WikiText-103 dataset contained empty text examples, we removed these examples before sampling batches to compute embeddings. 
 
 \subsection{Model Architecture and Finetuning} 
 We used a pre-trained GPT-2 model with a language modeling (LM) head on top. The pre-trained GPT-2 model itself has 12 layers, 12 heads, 768-d hidden size, and 117M total parameters. The LM head is a linear layer with weights corresponding to the input embedding layers. The model was pre-trained on the English language and the pre-trained GPT-2 tokenizer has a vocab size of $\approx$ 50k tokens. For all finetuning experiments, we fine-tuned only the LM head for 10 epochs. We used no learning rate scheduler and no gradient accumulation. We used the AdamW optimizer, since AdamW has been shown empirically to give better training loss and improved generalization.
@@ -580,7 +580,7 @@ We note that, in principle, the Task2vec diversity coefficient can be computed w
 
 \subsection{Number of Batches and Batch Size Selection}
 \label{appendix:parameter_selection}
-Diversity coefficients in Table \ref{tab:div} were computed using randomly selected batches of size 512 sequences and a pre-trained, finetuned GPT-2 probe network. Diversity coefficients of C4, WikiText-103, The Pile, Pile-CC, HackerNews, NIH ExPorter, PubMed Abstracts, and USPTO were each computed using 200 sampled batches. Given resource constraints, we found 200 batches\footnote{This results in $(200^2-200)/2 = 19,900$ pairwise distances used to compute the diversity coefficient.} to be a sufficiently large number of batches to estimate the diversity coefficient with tight 95\% confidence intervals on the order of $1\text{e-}5$. We chose 512 as the batch size, since it is a relatively large and feasible batch size to fine-tune the probe network on 200 batches using Azure NV12s\_v3 instances equipped with Tesla M60 GPUs in a reasonable amount of time (30+ hours). 
+Diversity coefficients in Table~\ref{tab:div} were computed using randomly selected batches of size 512 sequences and a pre-trained, finetuned GPT-2 probe network. Diversity coefficients of C4, WikiText-103, The Pile, Pile-CC, HackerNews, NIH ExPorter, PubMed Abstracts, and USPTO were each computed using 200 sampled batches. Given resource constraints, we found 200 batches\footnote{This results in $(200^2-200)/2 = 19,900$ pairwise distances used to compute the diversity coefficient.} to be a sufficiently large number of batches to estimate the diversity coefficient with tight 95\% confidence intervals on the order of $1\text{e-}5$. We chose 512 as the batch size, since it is a relatively large and feasible batch size to fine-tune the probe network on 200 batches using Azure NV12s\_v3 instances equipped with Tesla M60 GPUs in a reasonable amount of time (30+ hours). 
 
 \subsection{Diversity Coefficient Computation of Concatenated Datasets}
 \label{appendix:concat_datasets}
@@ -625,7 +625,7 @@ For the diversity coefficient of The Pile, because batches were sampled such tha
 \end{figure}
 
 \textbf{Experiments:}
-To provide confidence in the magnitude of the coefficient values of C4, WikiText-103, and The Pile, we plot the distribution of distances per dataset in Figure \ref{fig:hist_indiv_data}. 
+To provide confidence in the magnitude of the coefficient values of C4, WikiText-103, and The Pile, we plot the distribution of distances per dataset in Figure~\ref{fig:hist_indiv_data}. 
 We aim to show that a subsample of batches can provide a good estimation of population statistics, such as the diversity coefficient, which measures the expected Task2Vec (cosine) distance between batches.
 
 \textbf{Results:} 
@@ -634,8 +634,8 @@ For each dataset, the pairwise distances take on unimodal and approximately Gaus
 These results suggest the Task2Vec distances are approximately normally distributed.
 This suggests we can make strong inferences about the population.
 Specifically, we are able to compute a good estimate of the diversity coefficient using 200 batches using the mean.
-This is in fact the same argument from \cite{curse_low_div}---but we verified it applied in our setting.
-Figure \ref{fig:hist_indiv_data} also shows few outlier batches---the presence of which could influence the computed diversity coefficient.
+This is in fact the same argument from \citep{curse_low_div}---but we verified it applied in our setting.
+Figure~\ref{fig:hist_indiv_data} also shows few outlier batches---the presence of which could influence the computed diversity coefficient.
 This provides further confidence in the coefficient values computed and justifies our use of a sample of batches to estimate diversity.
 
 % 4. the choice of using the expectation was empirically based on the bell shape of the histogram that shows the distribution of task distances (via Task2Vec) in figures \ref{hist_resnets_divs_cifarfs}, \ref{hist_resnets_divs_mi} \ref{hist_resnets_divs_gau}.
@@ -711,7 +711,7 @@ Used to train GPT2.
 \section{Generative IN-Context Learning (GINC) Dataset}
 \label{appendix:ginc}
 \subsection{Background}
-The GINC dataset is generated using the latent concept framework proposed in \cite{ginc}, where language models condition on a prompt to infer latent document concepts learned during pre-training. The pretraining distribution is defined using a uniform mixture of Hidden Markov Models (HMMs) parameterized over a family $\Theta$ of latent concepts.
+The GINC dataset is generated using the latent concept framework proposed in \citep{ginc}, where language models condition on a prompt to infer latent document concepts learned during pre-training. The pretraining distribution is defined using a uniform mixture of Hidden Markov Models (HMMs) parameterized over a family $\Theta$ of latent concepts.
 
 \subsection{Definitions of GINC Dataset Parameters}
 \textbf{Number of latent concepts:} A latent concept $\theta$ parameterizes the transitions of a HMM in the mixture. A latent concept (e.g. a wiki bio) contains document statistics, such as semantics, syntax, and the formatting of and distribution of tokens.
@@ -729,7 +729,7 @@ The GINC dataset is generated using the latent concept framework proposed in \ci
   \label{fig:div_vs_nlatents_vocab}
 \end{figure*}
 
-Figure \ref{fig:div_vs_nlatents_vocab} confirms that the trends between the diversity coefficient and number of latent concepts (left) hold even as vocab size is varied.
+Figure~\ref{fig:div_vs_nlatents_vocab} confirms that the trends between the diversity coefficient and number of latent concepts (left) hold even as vocab size is varied.
 Similarly, trends between the diversity coefficient and the vocabulary size (right) hold as the number of latent concepts is varied. 
 These trends were noted in Section \ref{body:ginc}.
 
@@ -738,7 +738,7 @@ These trends were noted in Section \ref{body:ginc}.
 % - However, it is worth noting that our metric relies on tunable parameters, including the number of batches, batch size, and probe network depth. 
 % 	- These parameters affect the absolute value of the diversity coefficient, necessitating recalibration of the conceptual lower and upper bounds accordingly (see sections \ref{appendix:parameter_selection} and \ref{appendix:div_parameters}).
 % 		- However, this can be resolved by using a consistent choice of hyper parameters. 
-% 		- In addition, while we employ a pre-trained and fine-tuned network as a probe, we are actively exploring alternative approaches, such as using random and/or non-fine-tuned networks (see section \ref{appendix:div_parameters}).
+% 		- In addition, while we employ a pre-trained and fine-tuned network as a probe, we are actively exploring alternative approaches, such as using random and/or non-fine-tuned networks (see Section~\ref{appendix:div_parameters}).
 % - how does diversity relate to quality/performance?
 % 	- diversity might not help models e.g. just uniform noise has the most diversity (NFT)
 % 	- however, since diversity tries to capture spread, a higher diversity (with a sufficiently large model) likely leads to better performance and therefore your data is of higher quality. 
@@ -780,7 +780,7 @@ Therefore, embedding methods for data diversity, quality, etc. have the unique a
 
 Our diversity calculations predominantly utilize a small model (GPT-2). 
 Despite the ongoing discussion concerning the emergence of large language models (LLMs), our conjecture extends the results to models of all sizes. 
-We base this inference on the fact that the manifestation of emergence is intimately tied to the specific metric employed, and the sudden unpredictable jumps disappear when smooth metrics are applied \cite{schaeffer2023emergent}.
+We base this inference on the fact that the manifestation of emergence is intimately tied to the specific metric employed, and the sudden unpredictable jumps disappear when smooth metrics are applied \citep{schaeffer2023emergent}.
 The cosine distance is smooth and does not have this issue. 
 
 % \textbf{Why and when does diversity matter?}
@@ -815,10 +815,10 @@ We propose two central conjectures for the importance of diversity and provide t
 
 Another benefit is that our method does not rely on activations from an arbitrarily selected layer in a network.
 Lastly, note that activations may be unreliable for embedding dataset/tasks because large distances between datasets/tasks may be due to well-separated decision boundaries instead of intrinsic semantic properties of the dataset/task.
-In contrast, the diversity coefficient is well-justified, extensively tested in our work and previous work, e.g. the diversity coefficient correlates with ground truth diversities, cluster according to semantics, taxonomy etc. (see section \ref{appendix:ground_truth_div} and \cite{task2vec, curse_low_div}). 
+In contrast, the diversity coefficient is well-justified, extensively tested in our work and previous work, e.g. the diversity coefficient correlates with ground truth diversities, cluster according to semantics, taxonomy etc. (see Section~\ref{appendix:ground_truth_div} and \citep{task2vec, curse_low_div}). 
 In short, FIM-based representations are motivated by information theory (e.g. FIMs are metrics in distributions) and have been extensively tested by independent sources \citep{curse_low_div, task2vec, nlp_task2vec}.
 
-Data has taken a central role in the success of modern machine learning methods, like GPT4 \cite{gpt4}, CLIP \cite{clip}, and PaLM 2 \cite{google2023palm2}, with special relevance for architectures with few inductive biases, like the popular Transformer \citep{vaswani2017attention}.
+Data has taken a central role in the success of modern machine learning methods, like GPT4 \citep{gpt4}, CLIP \citep{clip}, and PaLM 2 \citep{google2023palm2}, with special relevance for architectures with few inductive biases, like the popular Transformer \citep{vaswani2017attention}.
 Therefore, it is paramount to understand the pretraining data we use, beyond scale alone.
 We conclude the diversity coefficient is a trustworthy metric, and conjecture the diversity coefficient can be used to build quality, diverse datasets for LLMs.
 We hope our contributions inspire more effective data collection and curation in machine learning that goes beyond scale alone to improve performance. 
@@ -876,9 +876,9 @@ Importantly, the relationship between pre-training dataset diversity and test pe
 % We observe a negative correlation between diversity and perplexity, i.e., an increase in diversity correlates with a decrease in perplexity---indicating a positive relationship between diversity and model performance (although the perplexity values are large). Therefore, we conjecture diversity improves test performance on general tasks.
 To investigate, we conduct preliminary experiments, pre-training three GPT-2 models on datasets of varying diversities, then evaluate their performance on diverse validation datasets.
 % We observe in table \ref{tab:div_vs_ppl} a negative correlation between diversity and perplexity, i.e., an increase in diversity correlates with a decrease in perplexity---indicating a positive relationship between diversity and model performance (although the perplexity values are large). 
-We observe in Table \ref{tab:div_vs_ppl} that increased diversity leads to decreased cross-entropy loss, indicating a positive relationship between diversity and model performance on diverse tasks. Although the cross-entropy values are arguably large, Figure \ref{fig:outputs_are_good_despite_high_loss} shows that even the smallest 51M parameter models were still pre-trained enough to grasp important aspects of sentence syntax and structure of their respective dataset, indicating model performance on evaluation represents meaningful improvements in ability. 
+We observe in Table~\ref{tab:div_vs_ppl} that increased diversity leads to decreased cross-entropy loss, indicating a positive relationship between diversity and model performance on diverse tasks. Although the cross-entropy values are arguably large, Figure~\ref{fig:outputs_are_good_despite_high_loss} shows that even the smallest 51M parameter models were still pre-trained enough to grasp important aspects of sentence syntax and structure of their respective dataset, indicating model performance on evaluation represents meaningful improvements in ability. 
 Hence, we conjecture pre-training on higher diversity data improves test performance on diverse tasks, though more extensive experiments are needed to know so conclusively.
-% However, this type of experiment is challenging because pre-training an LLM at scale is expensive---more than 10M dollars \cite{ruiz2023train}.
+% However, this type of experiment is challenging because pre-training an LLM at scale is expensive---more than 10M dollars \citep{ruiz2023train}.
 
 \subsection{Future Work}
 Our future research will explore the potential of the Task2Vec distance function for pre-training dataset curation. 

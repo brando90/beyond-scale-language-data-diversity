@@ -1,0 +1,274 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldcontentsline\contentsline
+\gdef\contentsline#1#2#3#4{\oldcontentsline{#1}{#2}{#3}}
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\contentsline\oldcontentsline
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\bibstyle{plainnat}
+\citation{chowdhery2022palm,nostalgebraist2022chinchilla,gpt4,google2023palm2}
+\citation{hestness2017deep,rosenfeld2019constructive,henighan2020scaling,kaplan2020scaling,gordon2021data,hernandez2021scaling,jones2021scaling,zhai2022scaling,hoffmann2022training,clark2022unified,neumann2022scaling}
+\citation{llama,llamav2}
+\citation{longpre2023pretrainer}
+\citation{tatsu,david2010impossibility}
+\citation{thepile,gpt3,llama,eldan2023tinystories,gunasekar2023textbooks}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\newlabel{introduction}{{1}{1}{}{section.1}{}}
+\citation{xie2022explanation,shin2022effect,chan2022data}
+\citation{david2010impossibility}
+\citation{longpre2023pretrainer}
+\citation{xie2023doremi,xie2023data}
+\citation{task2vec,curse_low_div}
+\citation{task2vec}
+\citation{task2vec}
+\citation{task2vec}
+\citation{task2vec}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Method: the Diversity Coefficient for Natural Language}{3}{section.2}\protected@file@percent }
+\newlabel{methods}{{2}{3}{}{section.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces  \textbf  {The process of computing the diversity coefficient for a dataset proceeds through three main stages:} (a) randomly sampling batches of text from the dataset, (b) computing the Task2Vec embeddings for each sampled batch, and (c) calculating the expected pairwise cosine distance between the Task2Vec embeddings of the sampled data. }}{3}{figure.1}\protected@file@percent }
+\newlabel{fig:div_pipeline}{{1}{3}{\textbf {The process of computing the diversity coefficient for a dataset proceeds through three main stages:} (a) randomly sampling batches of text from the dataset, (b) computing the Task2Vec embeddings for each sampled batch, and (c) calculating the expected pairwise cosine distance between the Task2Vec embeddings of the sampled data}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Computing Task2Vec Embeddings For Text}{3}{subsection.2.1}\protected@file@percent }
+\newlabel{body:computing_task2vec}{{2.1}{3}{Computing Task2Vec Embeddings For Text}{subsection.2.1}{}}
+\citation{task2vec,curse_low_div,9577374}
+\citation{gpt2}
+\citation{gpt2}
+\citation{task2vec}
+\citation{task2vec,curse_low_div,miranda2023pretraining}
+\citation{task2vec}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Computing the Diversity Coefficient for Natural Language Text}{4}{subsection.2.2}\protected@file@percent }
+\newlabel{body:div_coeff_natural_lang}{{2.2}{4}{Computing the Diversity Coefficient for Natural Language Text}{subsection.2.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Backbone Used to compute the Diversity Coefficient}{4}{subsection.2.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces \textbf  {Diversity coefficients of LLM pre-training datasets are 2.7-4.76 times higher than the conceptual lower bound and more than half that of the upper bound.} \textbf  {Cross diversity coefficients of LLM pre-training datasets are 3-5 times higher than the conceptual lower bound and more than half that of the upper bound. Overall, any strategy of concatenating datasets increases the cross diversity coefficient}. For the diversity coefficient, batches of text sequences were sampled from a mixed (i.e. interleaved) pool of sequences from all sub-datasets. Thus, sequences from both sub-datasets are present in the same batch at a rate dictated by the data mixture. Mix1 stands for a data mixture with ratio 3:1 (i.e., 0.75 to 0.25) for the corresponding combined data sets. Mix2 stands for a data mixture according to LLaMA v1 (i.e., 0.77, 0.23) for the corresponding combined data sets (see Appendix \ref  {appendix:mixdetails} for details). Note, cross diversity does \textit  {not} mix datasets when computing the corresponding coefficient. Instead, we sample batches entirely from one of the sub-datasets; the distance between batches is then used to compute the cross diversity (see Appendix \ref  {appendix:cross_div_justification} for explanation). }}{5}{table.1}\protected@file@percent }
+\newlabel{tab:div}{{1}{5}{\textbf {Diversity coefficients of LLM pre-training datasets are 2.7-4.76 times higher than the conceptual lower bound and more than half that of the upper bound.} \textbf {Cross diversity coefficients of LLM pre-training datasets are 3-5 times higher than the conceptual lower bound and more than half that of the upper bound. Overall, any strategy of concatenating datasets increases the cross diversity coefficient}. For the diversity coefficient, batches of text sequences were sampled from a mixed (i.e. interleaved) pool of sequences from all sub-datasets. Thus, sequences from both sub-datasets are present in the same batch at a rate dictated by the data mixture. Mix1 stands for a data mixture with ratio 3:1 (i.e., 0.75 to 0.25) for the corresponding combined data sets. Mix2 stands for a data mixture according to LLaMA v1 (i.e., 0.77, 0.23) for the corresponding combined data sets (see Appendix \ref {appendix:mixdetails} for details). Note, cross diversity does \textit {not} mix datasets when computing the corresponding coefficient. Instead, we sample batches entirely from one of the sub-datasets; the distance between batches is then used to compute the cross diversity (see Appendix \ref {appendix:cross_div_justification} for explanation)}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Recipe for Establishing if a Diversity Coefficient is High via the Conceptual Lower and Upper Bounds }{5}{subsection.2.4}\protected@file@percent }
+\newlabel{method_ub_lb}{{2.4}{5}{Recipe for Establishing if a Diversity Coefficient is High via the Conceptual Lower and Upper Bounds}{subsection.2.4}{}}
+\citation{gpt2}
+\citation{llamav2}
+\@writefile{toc}{\contentsline {section}{\numberline {3}Experiments \& Results}{6}{section.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces  \textbf  {Pre-training on datasets with higher diversity coefficients leads to better evaluation performance on diverse datasets.} Legends are formatted ``Model Type-Number of Parameters-Number of Tokens trained on". The models were evaluated on the validation sets. The diversity of the pre-training datasets increase from $0.158$, to $0.168$, to $0.195$. Models are evaluated on the validation split of the given evaluation dataset (given in each plot's title). All models of the same run (i.e. same color) are trained on the same number of tokens and the same hyperparameters, minimizing cofounding factors. }}{6}{figure.2}\protected@file@percent }
+\newlabel{fig:div_vs_val_ce}{{2}{6}{\textbf {Pre-training on datasets with higher diversity coefficients leads to better evaluation performance on diverse datasets.} Legends are formatted ``Model Type-Number of Parameters-Number of Tokens trained on". The models were evaluated on the validation sets. The diversity of the pre-training datasets increase from $0.158$, to $0.168$, to $0.195$. Models are evaluated on the validation split of the given evaluation dataset (given in each plot's title). All models of the same run (i.e. same color) are trained on the same number of tokens and the same hyperparameters, minimizing cofounding factors}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Pre-training in Higher Diversity Leads to Better Evaluation Performance}{6}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Diversity Coefficients of Pre-training Data shows LLMs are Pre-trained on Formally Highly Diverse Data}{7}{subsection.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces  \textbf  {Distribution of pairwise batch distances reflects conceptual and semantic dataset properties, therefore increasing trust in the diversity and cross diversity coefficient.} Pairwise task distances from the concatenated C4 and WikiText-103 dataset (top) and concatenated five sub-datasets of The Pile (bottom) take on a multi-modal form according to dataset comparisons. Pairwise distances are segmented by source datasets for each pair of batches (right), where each sub-distribution corresponds to a mode from the histograms (left). Dotted lines denote the cross diversity coefficient of the concatenated C4 and WikiText-103 dataset (top) and concatenation of five sub-datasets of The Pile (bottom). These results show that combining batches from two different datasets computes a higher cross diversity, as expected. Therefore, these results align with human intuition, increasing the confidence in the diversity and cross diversity coefficients as diversity metrics. }}{8}{figure.3}\protected@file@percent }
+\newlabel{fig:concat_div}{{3}{8}{\textbf {Distribution of pairwise batch distances reflects conceptual and semantic dataset properties, therefore increasing trust in the diversity and cross diversity coefficient.} Pairwise task distances from the concatenated C4 and WikiText-103 dataset (top) and concatenated five sub-datasets of The Pile (bottom) take on a multi-modal form according to dataset comparisons. Pairwise distances are segmented by source datasets for each pair of batches (right), where each sub-distribution corresponds to a mode from the histograms (left). Dotted lines denote the cross diversity coefficient of the concatenated C4 and WikiText-103 dataset (top) and concatenation of five sub-datasets of The Pile (bottom). These results show that combining batches from two different datasets computes a higher cross diversity, as expected. Therefore, these results align with human intuition, increasing the confidence in the diversity and cross diversity coefficients as diversity metrics}{figure.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Concatenation of Datasets of Different Sources Produces Higher Measured Diversity}{8}{subsection.3.3}\protected@file@percent }
+\citation{ginc}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Distribution of Pairwise Batch Distances Reflects Conceptual and Semantic Dataset Information}{9}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Diversity Coefficient Captures LLM Pre-training Data Distributional Properties}{9}{subsection.3.5}\protected@file@percent }
+\newlabel{body:ginc}{{3.5}{9}{Diversity Coefficient Captures LLM Pre-training Data Distributional Properties}{subsection.3.5}{}}
+\citation{sajjadi2018assessing}
+\citation{kynkaanniemi2019improved,simon2019revisiting,naeem2020}
+\citation{fowl2020random}
+\citation{xie2022explanation,shin2022effect,chan2022data}
+\citation{tirumala2023d4}
+\citation{xie2023doremi}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces \textbf  {Diversity coefficient of GINC datasets with varying number of latent concepts and vocab sizes shows the diversity coefficient behaves as expected.} The diversity coefficient increases and saturates with an increasing number of latent concepts (top) and exponentially increases with increasing vocab size (bottom). This implies that increases in the measured diversity coefficient correspond to changes in LM pre-training data distributional properties that intuitively enable more diverse data. }}{10}{figure.4}\protected@file@percent }
+\newlabel{fig:div_rsquared}{{4}{10}{\textbf {Diversity coefficient of GINC datasets with varying number of latent concepts and vocab sizes shows the diversity coefficient behaves as expected.} The diversity coefficient increases and saturates with an increasing number of latent concepts (top) and exponentially increases with increasing vocab size (bottom). This implies that increases in the measured diversity coefficient correspond to changes in LM pre-training data distributional properties that intuitively enable more diverse data}{figure.4}{}}
+\citation{friedman2022vendi}
+\citation{alexnet,resnet}
+\citation{bert,gpt3,chowdhery2022palm,gpt4,google2023palm2}
+\citation{alphago,atari1,EfficientZero}
+\citation{skiptree,gptf,pact}
+\citation{codex}
+\citation{clip}
+\citation{llama}
+\@writefile{toc}{\contentsline {section}{\numberline {4}Related Work}{11}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Discussion}{11}{section.5}\protected@file@percent }
+\bibdata{dmlr_bib_refs}
+\bibcite{abbas2023semdedup}{{1}{2023}{{Abbas et~al.}}{{Abbas, Tirumala, Simig, Ganguli, and Morcos}}}
+\bibcite{abbas2024effective}{{2}{2024}{{Abbas et~al.}}{{Abbas, Rusak, Tirumala, Brendel, Chaudhuri, and Morcos}}}
+\bibcite{AchilleMbengSoatto2018}{{3}{2018}{{Achille et~al.}}{{Achille, Mbeng, and Soatto}}}
+\bibcite{task2vec}{{4}{2019{a}}{{Achille et~al.}}{{Achille, Lam, Tewari, Ravichandran, Maji, Fowlkes, Soatto, and Perona}}}
+\bibcite{achille2019dynamics}{{5}{2019{b}}{{Achille et~al.}}{{Achille, Mbeng, and Soatto}}}
+\bibcite{AchillePaoliniMbengSoatto2021}{{6}{2021}{{Achille et~al.}}{{Achille, Paolini, Mbeng, and Soatto}}}
+\bibcite{Bengtsson_2008}{{7}{2008}{{Bengtsson et~al.}}{{Bengtsson, Bickel, and Li}}}
+\bibcite{gpt3}{{8}{2020}{{Brown et~al.}}{{Brown, Mann, Ryder, Subbiah, Kaplan, Dhariwal, Neelakantan, Shyam, Sastry, Askell, Agarwal, Herbert{-}Voss, Krueger, Henighan, Child, Ramesh, Ziegler, Wu, Winter, Hesse, Chen, Sigler, Litwin, Gray, Chess, Clark, Berner, McCandlish, Radford, Sutskever, and Amodei}}}
+\bibcite{chan2022data}{{9}{2022}{{Chan et~al.}}{{Chan, Santoro, Lampinen, Wang, Singh, Richemond, McClelland, and Hill}}}
+\bibcite{codex}{{10}{}{{Chen et~al.}}{{Chen, Tworek, Jun, Yuan, {Ponde de Oliveira Pinto}, Kaplan, Edwards, Burda, Joseph, Brockman, Ray, Puri, Krueger, Petrov, Khlaaf, Sastry, Mishkin, Chan, Gray, Ryder, Pavlov, Power, Kaiser, Bavarian, Winter, Tillet, {Petroski Such}, Cummings, Plappert, Chantzis, Barnes, Herbert-Voss, {Hebgen Guss}, Nichol, Paino, Tezak, Tang, Babuschkin, Balaji, Jain, Saunders, Hesse, Carr, Leike, Achiam, Misra, Morikawa, Radford, Knight, Brundage, Murati, Mayer, Welinder, McGrew, Amodei, McCandlish, Sutskever, and Zaremba}}}
+\bibcite{chowdhery2022palm}{{11}{2022}{{Chowdhery et~al.}}{{Chowdhery, Narang, Devlin, Bosma, Mishra, Roberts, Barham, Chung, Sutton, Gehrmann, et~al.}}}
+\bibcite{clark2022unified}{{12}{2022}{{Clark et~al.}}{{Clark, De~Las~Casas, Guy, Mensch, Paganini, Hoffmann, Damoc, Hechtman, Cai, Borgeaud, et~al.}}}
+\bibcite{david2010impossibility}{{13}{2010}{{David et~al.}}{{David, Lu, Luu, and Pal}}}
+\bibcite{bert}{{14}{2018}{{Devlin et~al.}}{{Devlin, Chang, Lee, and Toutanova}}}
+\bibcite{eldan2023tinystories}{{15}{2023}{{Eldan and Li}}{{}}}
+\bibcite{fowl2020random}{{16}{2020}{{Fowl et~al.}}{{Fowl, Goldblum, Gupta, Sharaf, and Goldstein}}}
+\bibcite{friedman2022vendi}{{17}{2022}{{Friedman and Dieng}}{{}}}
+\bibcite{thepile}{{18}{2020}{{Gao et~al.}}{{Gao, Biderman, Black, Golding, Hoppe, Foster, Phang, He, Thite, Nabeshima, Presser, and Leahy}}}
+\bibcite{GelmanMeng2004}{{19}{2004}{{Gelman and Meng}}{{}}}
+\bibcite{google2023palm2}{{20}{2023}{{Google}}{{}}}
+\bibcite{gordon2021data}{{21}{2021}{{Gordon et~al.}}{{Gordon, Duh, and Kaplan}}}
+\bibcite{gunasekar2023textbooks}{{22}{2023}{{Gunasekar et~al.}}{{Gunasekar, Zhang, Aneja, Mendes, Giorno, Gopi, Javaheripi, Kauffmann, de~Rosa, Saarikivi, Salim, Shah, Behl, Wang, Bubeck, Eldan, Kalai, Lee, and Li}}}
+\bibcite{pact}{{23}{}{{Han et~al.}}{{Han, Rute, Wu, Ayers, and Polu}}}
+\bibcite{tatsu}{{24}{2021}{{Hashimoto}}{{}}}
+\bibcite{resnet}{{25}{2015}{{He et~al.}}{{He, Zhang, Ren, and Sun}}}
+\bibcite{henighan2020scaling}{{26}{2020}{{Henighan et~al.}}{{Henighan, Kaplan, Katz, Chen, Hesse, Jackson, Jun, Brown, Dhariwal, Gray, et~al.}}}
+\bibcite{hernandez2021scaling}{{27}{2021}{{Hernandez et~al.}}{{Hernandez, Kaplan, Henighan, and McCandlish}}}
+\bibcite{hestness2017deep}{{28}{2017}{{Hestness et~al.}}{{Hestness, Narang, Ardalani, Diamos, Jun, Kianinejad, Patwary, Ali, Yang, and Zhou}}}
+\bibcite{hoffmann2022training}{{29}{2022}{{Hoffmann et~al.}}{{Hoffmann, Borgeaud, Mensch, Buchatskaya, Cai, Rutherford, Casas, Hendricks, Welbl, Clark, et~al.}}}
+\bibcite{contamination}{{30}{2024}{{Jiang et~al.}}{{Jiang, Liu, Zhong, Schaeffer, Ouyang, Han, and Koyejo}}}
+\bibcite{jones2021scaling}{{31}{2021}{{Jones}}{{}}}
+\bibcite{kaplan2020scaling}{{32}{2020}{{Kaplan et~al.}}{{Kaplan, McCandlish, Henighan, Brown, Chess, Child, Gray, Radford, Wu, and Amodei}}}
+\bibcite{cka}{{33}{2019}{{Kornblith et~al.}}{{Kornblith, Norouzi, Lee, and Hinton}}}
+\bibcite{alexnet}{{34}{2012}{{Krizhevsky et~al.}}{{Krizhevsky, Sutskever, and Hinton}}}
+\bibcite{kynkaanniemi2019improved}{{35}{2019}{{Kynkäänniemi et~al.}}{{Kynkäänniemi, Karras, Laine, Lehtinen, and Aila}}}
+\bibcite{longpre2023pretrainer}{{36}{2023}{{Longpre et~al.}}{{Longpre, Yauney, Reif, Lee, Roberts, Zoph, Zhou, Wei, Robinson, Mimno, and Ippolito}}}
+\bibcite{wikitext}{{37}{2016}{{Merity et~al.}}{{Merity, Xiong, Bradbury, and Socher}}}
+\bibcite{miranda2023pretraining}{{38}{2023}{{Miranda et~al.}}{{Miranda, Yu, Goyal, Wang, and Koyejo}}}
+\bibcite{curse_low_div}{{39}{2022{a}}{{Miranda et~al.}}{{Miranda, Yu, Wang, and Koyejo}}}
+\bibcite{diversity}{{40}{2022{b}}{{Miranda et~al.}}{{Miranda, Yu, Wang, and Koyejo}}}
+\bibcite{mitchell2023measuring}{{41}{2023}{{Mitchell et~al.}}{{Mitchell, Luccioni, Lambert, Gerchick, McMillan-Major, Ozoani, Rajani, Thrush, Jernite, and Kiela}}}
+\bibcite{atari1}{{42}{2013}{{Mnih et~al.}}{{Mnih, Kavukcuoglu, Silver, Graves, Antonoglou, Wierstra, and Riedmiller}}}
+\bibcite{pwcca}{{43}{2018}{{Morcos et~al.}}{{Morcos, Raghu, and Bengio}}}
+\bibcite{naeem2020}{{44}{2020}{{Naeem et~al.}}{{Naeem, Oh, Uh, Choi, and Yoo}}}
+\bibcite{neumann2022scaling}{{45}{2022}{{Neumann and Gros}}{{}}}
+\bibcite{nostalgebraist2022chinchilla}{{46}{2022}{{Nostalgebraist}}{{}}}
+\bibcite{gpt4}{{47}{2023}{{OpenAI}}{{}}}
+\bibcite{gptf}{{48}{2020}{{Polu and Sutskever}}{{}}}
+\bibcite{skiptree}{{49}{}{{Rabe et~al.}}{{Rabe, Research, Lee, Bansal, and Szegedy}}}
+\bibcite{gpt2}{{50}{2019}{{Radford et~al.}}{{Radford, Wu, Child, Luan, Amodei, and Sutskever}}}
+\bibcite{clip}{{51}{2021}{{Radford et~al.}}{{Radford, Kim, Hallacy, Ramesh, Goh, Agarwal, Sastry, Askell, Mishkin, Clark, Krueger, and Sutskever}}}
+\bibcite{C4}{{52}{2019}{{Raffel et~al.}}{{Raffel, Shazeer, Roberts, Lee, Narang, Matena, Zhou, Li, and Liu}}}
+\bibcite{svcca}{{53}{2017}{{Raghu et~al.}}{{Raghu, Gilmer, Yosinski, and Sohl-Dickstein}}}
+\bibcite{rosenfeld2019constructive}{{54}{2019}{{Rosenfeld et~al.}}{{Rosenfeld, Rosenfeld, Belinkov, and Shavit}}}
+\bibcite{sajjadi2018assessing}{{55}{2018}{{Sajjadi et~al.}}{{Sajjadi, Bachem, Lucic, Bousquet, and Gelly}}}
+\bibcite{mirage}{{56}{2023{a}}{{Schaeffer et~al.}}{{Schaeffer, Miranda, and Koyejo}}}
+\bibcite{schaeffer2023emergent}{{57}{2023{b}}{{Schaeffer et~al.}}{{Schaeffer, Miranda, and Koyejo}}}
+\bibcite{shin2022effect}{{58}{2022}{{Shin et~al.}}{{Shin, Lee, Ahn, Kim, Kim, Kim, Cho, Lee, Park, Ha, and Sung}}}
+\bibcite{alphago}{{59}{2016}{{Silver et~al.}}{{Silver, Huang, Maddison, Guez, Sifre, {Van Den Driessche}, Schrittwieser, Antonoglou, Panneershelvam, Lanctot, Dieleman, Grewe, Nham, Kalchbrenner, Sutskever, Lillicrap, Leach, Kavukcuoglu, Graepel, and Hassabis}}}
+\bibcite{simon2019revisiting}{{60}{2019}{{Simon et~al.}}{{Simon, Webster, and Rabin}}}
+\bibcite{SnyderEtAl2008}{{61}{2008}{{Snyder et~al.}}{{Snyder, Bengtsson, Bickel, and Anderson}}}
+\bibcite{cerebras2023slimpajama}{{62}{2023}{{Soboleva et~al.}}{{Soboleva, Al-Khateeb, Myers, Steeves, Hestness, and Dey}}}
+\bibcite{sorscher2023neural}{{63}{2023}{{Sorscher et~al.}}{{Sorscher, Geirhos, Shekhar, Ganguli, and Morcos}}}
+\bibcite{tirumala2023d4}{{64}{2023}{{Tirumala et~al.}}{{Tirumala, Simig, Aghajanyan, and Morcos}}}
+\bibcite{llama}{{65}{2023{a}}{{Touvron et~al.}}{{Touvron, Lavril, Izacard, Martinet, Lachaux, Lacroix, Rozière, Goyal, Hambro, Azhar, Rodriguez, Joulin, Grave, and Lample}}}
+\bibcite{llamav2}{{66}{2023{b}}{{Touvron et~al.}}{{Touvron, Martin, Stone, Albert, Almahairi, Babaei, Bashlykov, Batra, Bhargava, Bhosale, Bikel, Blecher, Ferrer, Chen, Cucurull, Esiobu, Fernandes, Fu, Fu, Fuller, Gao, Goswami, Goyal, Hartshorn, Hosseini, Hou, Inan, Kardas, Kerkez, Khabsa, Kloumann, Korenev, Koura, Lachaux, Lavril, Lee, Liskovich, Lu, Mao, Martinet, Mihaylov, Mishra, Molybog, Nie, Poulton, Reizenstein, Rungta, Saladi, Schelten, Silva, Smith, Subramanian, Tan, Tang, Taylor, Williams, Kuan, Xu, Yan, Zarov, Zhang, Fan, Kambadur, Narang, Rodriguez, Stojnic, Edunov, and Scialom}}}
+\bibcite{vaswani2017attention}{{67}{2017}{{Vaswani et~al.}}{{Vaswani, Shazeer, Parmar, Uszkoreit, Jones, Gomez, Kaiser, and Polosukhin}}}
+\bibcite{nlp_task2vec}{{68}{2020}{{Vu et~al.}}{{Vu, Wang, Munkhdalai, Sordoni, Trischler, Mattarella{-}Micke, Maji, and Iyyer}}}
+\bibcite{9577374}{{69}{2021}{{Wallace et~al.}}{{Wallace, Wu, and Hariharan}}}
+\bibcite{ginc}{{70}{2021}{{Xie et~al.}}{{Xie, Raghunathan, Liang, and Ma}}}
+\bibcite{xie2022explanation}{{71}{2022}{{Xie et~al.}}{{Xie, Raghunathan, Liang, and Ma}}}
+\bibcite{xie2023doremi}{{72}{2023{a}}{{Xie et~al.}}{{Xie, Pham, Dong, Du, Liu, Lu, Liang, Le, Ma, and Yu}}}
+\bibcite{dsir}{{73}{2023{b}}{{Xie et~al.}}{{Xie, Santurkar, Ma, and Liang}}}
+\bibcite{xie2023data}{{74}{2023{c}}{{Xie et~al.}}{{Xie, Santurkar, Ma, and Liang}}}
+\bibcite{EfficientZero}{{75}{2021}{{Ye et~al.}}{{Ye, Liu, Kurutach, Abbeel, Gao, University, Berkeley, Qi, and Institute}}}
+\bibcite{zhai2022scaling}{{76}{2022}{{Zhai et~al.}}{{Zhai, Kolesnikov, Houlsby, and Beyer}}}
+\bibcite{zhang2021understanding}{{77}{2021}{{Zhang et~al.}}{{Zhang, Bengio, Hardt, Recht, and Vinyals}}}
+\citation{task2vec}
+\citation{task2vec}
+\citation{abbas2023semdedup,abbas2024effective}
+\citation{sorscher2023neural}
+\citation{thepile}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Intuition of Task2Vec}{19}{appendix.A}\protected@file@percent }
+\newlabel{appendix:intuitiontask2vec}{{A}{19}{Diversity Coefficient Captures LLM Pre-training Data Distributional Properties}{appendix.A}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B}Related Work (cont.)}{19}{appendix.B}\protected@file@percent }
+\newlabel{related_work_cont}{{B}{19}{Diversity Coefficient Captures LLM Pre-training Data Distributional Properties}{appendix.B}{}}
+\citation{mitchell2023measuring}
+\citation{alexnet,resnet}
+\citation{bert,gpt3,chowdhery2022palm,gpt4,google2023palm2}
+\citation{alphago,atari1,EfficientZero}
+\citation{skiptree,gptf,pact}
+\citation{codex}
+\citation{cka}
+\citation{pwcca}
+\@writefile{toc}{\contentsline {section}{\numberline {C}Justification of Task Based (Task2Vec) Diversity vs Activation, Token, and Model Agnostic based Diversity Formalizations}{20}{appendix.C}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.1}Resolution Power Deficits in Activation-Based Diversity Approaches Compared with Task2Vec Diversity}{20}{subsection.C.1}\protected@file@percent }
+\newlabel{subsection:div_acts_vs_task2vec}{{C.1}{20}{Resolution Power Deficits in Activation-Based Diversity Approaches Compared with Task2Vec Diversity}{subsection.C.1}{}}
+\newlabel{act_div}{{C.1}{20}{Resolution Power Deficits in Activation-Based Diversity Approaches Compared with Task2Vec Diversity}{subsection.C.1}{}}
+\citation{svcca,curse_low_div}
+\citation{contamination}
+\citation{mirage}
+\citation{dsir,Bengtsson_2008,GelmanMeng2004,SnyderEtAl2008}
+\citation{vaswani2017attention}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.2}Token Based Definitions of Diversity are Brittle to Paraphrasings}{21}{subsection.C.2}\protected@file@percent }
+\citation{task2vec}
+\citation{AchilleMbengSoatto2018}
+\citation{task2vec,AchilleMbengSoatto2018,achille2019dynamics,AchillePaoliniMbengSoatto2021}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces \textbf  {Shows the resolution power deficit in activation-based diversity approaches compared to Task2Vec Diversity.} We plot the diversity on the y-axis against percentage of the vocabulary used on the x-axis. Varying the vocabulary varies the diversity of a data set because the smaller the vocabulary, the more homogenous the sequence of text will be. For example, vocabulary size 1 gives the same sequence while $|V|$ allows for $|V|^T$ possible sequences. After only $8.09\%$ of the x-axis, the activation based diversity increased to it's maximum values and remains approximately constant within 95\%-confidence intervals, while Task2Vec diversity increases smoothly. To make the patterns clearer, we smoothed out the top three plots by removing outliers and used a smoothing value of 0.79 in the bottom three plots. The outlier plots can be recovered by observing at the light blue line in the bottom three plots. We conjecture that the outlier were caused by the small number of batches we used (30). }}{22}{figure.5}\protected@file@percent }
+\newlabel{fig:div_acts_vs_task2vec}{{5}{22}{\textbf {Shows the resolution power deficit in activation-based diversity approaches compared to Task2Vec Diversity.} We plot the diversity on the y-axis against percentage of the vocabulary used on the x-axis. Varying the vocabulary varies the diversity of a data set because the smaller the vocabulary, the more homogenous the sequence of text will be. For example, vocabulary size 1 gives the same sequence while $|V|$ allows for $|V|^T$ possible sequences. After only $8.09\%$ of the x-axis, the activation based diversity increased to it's maximum values and remains approximately constant within 95\%-confidence intervals, while Task2Vec diversity increases smoothly. To make the patterns clearer, we smoothed out the top three plots by removing outliers and used a smoothing value of 0.79 in the bottom three plots. The outlier plots can be recovered by observing at the light blue line in the bottom three plots. We conjecture that the outlier were caused by the small number of batches we used (30)}{figure.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.3}Discussion on Model Agnostics Formalizations of Data Diversity}{22}{subsection.C.3}\protected@file@percent }
+\newlabel{kolmogorov_fisher_relation}{{C.3}{22}{Discussion on Model Agnostics Formalizations of Data Diversity}{subsection.C.3}{}}
+\citation{C4}
+\citation{wikitext}
+\citation{thepile}
+\citation{cerebras2023slimpajama}
+\citation{gpt3}
+\citation{thepile}
+\@writefile{toc}{\contentsline {section}{\numberline {D}LLM Pre-training Datasets}{23}{appendix.D}\protected@file@percent }
+\newlabel{appendix:datasets}{{D}{23}{Discussion on Model Agnostics Formalizations of Data Diversity}{appendix.D}{}}
+\citation{thepile}
+\citation{thepile}
+\citation{thepile}
+\citation{thepile}
+\citation{diversity}
+\citation{diversity}
+\citation{diversity}
+\@writefile{toc}{\contentsline {section}{\numberline {E}Further Justification and Explanation of Cross Diversity}{24}{appendix.E}\protected@file@percent }
+\newlabel{appendix:cross_div_justification}{{E}{24}{Discussion on Model Agnostics Formalizations of Data Diversity}{appendix.E}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {F}Task2Vec Diversity Coefficient Correlates with Ground Truth Diversity}{24}{appendix.F}\protected@file@percent }
+\newlabel{appendix:ground_truth_div}{{F}{24}{Discussion on Model Agnostics Formalizations of Data Diversity}{appendix.F}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {G}Higher Formal Diversity of the Training Data Set Causes Higher Test Performance}{24}{appendix.G}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces \textbf  {Task2Vec diversity coefficient correlates with ground truth diversity for synthetic Gaussian benchmark.} Source: \cite  {diversity}}}{25}{figure.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {G.1}Higher Formal Diversity of the Training Data Set Causes Higher Test Performance: GPT2 Results}{25}{subsection.G.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces \textbf  {The table illustrates that as the diversity coefficient of training data increases, the cross-entropy loss (CE) decreases on diverse tasks, implying that training on higher diversity data improves evaluation performance on diverse tasks.} Each model is trained for the same number of tokens (1.31 B tokens total), all models have 51.5 M parameters, and all use a GPT-2-based architecture; all other hyperparameters are identical and controlled for. We evaluate on Pile-CC (Pile Common Crawl) and OpenWebText2 since those datasets align with intuitively diverse datasets, which we verify with the computed diversity values shown. }}{25}{table.2}\protected@file@percent }
+\newlabel{tab:div_vs_ppl}{{2}{25}{\textbf {The table illustrates that as the diversity coefficient of training data increases, the cross-entropy loss (CE) decreases on diverse tasks, implying that training on higher diversity data improves evaluation performance on diverse tasks.} Each model is trained for the same number of tokens (1.31 B tokens total), all models have 51.5 M parameters, and all use a GPT-2-based architecture; all other hyperparameters are identical and controlled for. We evaluate on Pile-CC (Pile Common Crawl) and OpenWebText2 since those datasets align with intuitively diverse datasets, which we verify with the computed diversity values shown}{table.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {G.2}Higher Formal Diversity of the Training Data Set Causes Higher Test Performance: All Results}{25}{subsection.G.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces \textbf  {Despite smaller scale (51M parameters) and relatively high loss/perplexity on certain evaluation datasets, the experimental models still grasp important aspects of sentence syntax and structure, even on evaluation data they otherwise struggle on (e.g. Wikitext-103, for which all models scored around 6.6 loss or more)}. In addition, when evaluated on similar, well aligned datasets (e.g. USPTO + PubMed Abs. (train) on USPTO (validation)), models are sometimes also able to match the form and semantic content of the example. Input examples were randomly picked from the given evaluation dataset.}}{26}{figure.7}\protected@file@percent }
+\newlabel{fig:outputs_are_good_despite_high_loss}{{7}{26}{\textbf {Despite smaller scale (51M parameters) and relatively high loss/perplexity on certain evaluation datasets, the experimental models still grasp important aspects of sentence syntax and structure, even on evaluation data they otherwise struggle on (e.g. Wikitext-103, for which all models scored around 6.6 loss or more)}. In addition, when evaluated on similar, well aligned datasets (e.g. USPTO + PubMed Abs. (train) on USPTO (validation)), models are sometimes also able to match the form and semantic content of the example. Input examples were randomly picked from the given evaluation dataset}{figure.7}{}}
+\citation{task2vec}
+\@writefile{toc}{\contentsline {section}{\numberline {H}Using the Diversity Coefficient in Practice: Setting Batch Size and Network Parameters}{27}{appendix.H}\protected@file@percent }
+\newlabel{body:div_parameters}{{H}{27}{Higher Formal Diversity of the Training Data Set Causes Higher Test Performance: All Results}{appendix.H}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {8}{\ignorespaces \textbf  {Diversity coefficients of C4 computed using different task batch sizes show positive and diminishing returns with increasing batch size (left). Diversity coefficients of C4 and WikiText-103 computed using different GPT-2 probe network configurations show that random networks' estimates likely diverge from those of pretrained networks (in particular, they appear to underestimate diversity), and non-finetuned networks overestimate diversity vs. finetuned networks (right).} 95\% confidence intervals for diversity coefficients are plotted, but are so small that they do not show. "pt" refers to pretrained network and "rand" refers to randomly initialized network. "ft" refers to a network that was finetuned per task and "no ft" refers to no finetuning performed.}}{27}{figure.8}\protected@file@percent }
+\newlabel{fig:batchsize_network_experiments}{{8}{27}{\textbf {Diversity coefficients of C4 computed using different task batch sizes show positive and diminishing returns with increasing batch size (left). Diversity coefficients of C4 and WikiText-103 computed using different GPT-2 probe network configurations show that random networks' estimates likely diverge from those of pretrained networks (in particular, they appear to underestimate diversity), and non-finetuned networks overestimate diversity vs. finetuned networks (right).} 95\% confidence intervals for diversity coefficients are plotted, but are so small that they do not show. "pt" refers to pretrained network and "rand" refers to randomly initialized network. "ft" refers to a network that was finetuned per task and "no ft" refers to no finetuning performed}{figure.8}{}}
+\citation{task2vec}
+\citation{diversity}
+\citation{task2vec}
+\citation{task2vec}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Experimental Details}{28}{appendix.I}\protected@file@percent }
+\newlabel{appendix:experiment_details}{{I}{28}{Higher Formal Diversity of the Training Data Set Causes Higher Test Performance: All Results}{appendix.I}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {I.1}Dataset Preprocessing}{28}{subsection.I.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {I.2}Model Architecture and Finetuning}{28}{subsection.I.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {I.3}Number of Batches and Batch Size Selection}{29}{subsection.I.3}\protected@file@percent }
+\newlabel{appendix:parameter_selection}{{I.3}{29}{Number of Batches and Batch Size Selection}{subsection.I.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {I.4}Diversity Coefficient Computation of Concatenated Datasets}{29}{subsection.I.4}\protected@file@percent }
+\newlabel{appendix:concat_datasets}{{I.4}{29}{Diversity Coefficient Computation of Concatenated Datasets}{subsection.I.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {I.5}Diversity Coefficient of The Pile vs. Concatenation of Five Sub-Datasets}{29}{subsection.I.5}\protected@file@percent }
+\citation{curse_low_div}
+\citation{ginc}
+\@writefile{toc}{\contentsline {subsection}{\numberline {I.6}Details on Mixes used for Interleaved Datasets}{30}{subsection.I.6}\protected@file@percent }
+\newlabel{appendix:mixdetails}{{I.6}{30}{Details on Mixes used for Interleaved Datasets}{subsection.I.6}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {J}Pairwise Distance Distributions of C4, WikiText-103, and The Pile}{30}{appendix.J}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9}{\ignorespaces \textbf  {Distributions of pairwise batch distances from C4 (top left), WikiText-103 (top right), and The Pile (bottom) are approximately Gaussian, which justifies the use of a sample of batches to measure the diversity coefficient.} Dotted lines indicate the average distance, i.e. the diversity coefficient, for each dataset.}}{31}{figure.9}\protected@file@percent }
+\newlabel{fig:hist_indiv_data}{{9}{31}{\textbf {Distributions of pairwise batch distances from C4 (top left), WikiText-103 (top right), and The Pile (bottom) are approximately Gaussian, which justifies the use of a sample of batches to measure the diversity coefficient.} Dotted lines indicate the average distance, i.e. the diversity coefficient, for each dataset}{figure.9}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {K}Generative IN-Context Learning (GINC) Dataset}{31}{appendix.K}\protected@file@percent }
+\newlabel{appendix:ginc}{{K}{31}{Details on Mixes used for Interleaved Datasets}{appendix.K}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {K.1}Background}{31}{subsection.K.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {K.2}Definitions of GINC Dataset Parameters}{31}{subsection.K.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {K.3}Supplemental Figures for Diversity Coefficient vs. GINC Parameters}{32}{subsection.K.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {10}{\ignorespaces \textbf  {Trends noted in Section \ref  {body:ginc} are consistent for diversity coefficient vs. number of latent concepts (left) and coefficient vs. vocab size (right) when the other parameter changes.} The diversity coefficient with 95\% confidence intervals saturates with increasing number of latent concepts (left) even as vocab size is varied between 50-1000. Larger vocab sizes generally produce higher diversity coefficients (right) even as the number of latent concepts is varied between 1-5000.}}{32}{figure.10}\protected@file@percent }
+\newlabel{fig:div_vs_nlatents_vocab}{{10}{32}{\textbf {Trends noted in Section \ref {body:ginc} are consistent for diversity coefficient vs. number of latent concepts (left) and coefficient vs. vocab size (right) when the other parameter changes.} The diversity coefficient with 95\% confidence intervals saturates with increasing number of latent concepts (left) even as vocab size is varied between 50-1000. Larger vocab sizes generally produce higher diversity coefficients (right) even as the number of latent concepts is varied between 1-5000}{figure.10}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {L}Discussion (cont.)}{32}{appendix.L}\protected@file@percent }
+\newlabel{appendix:discussion_cont}{{L}{32}{Supplemental Figures for Diversity Coefficient vs. GINC Parameters}{appendix.L}{}}
+\citation{schaeffer2023emergent}
+\citation{task2vec,curse_low_div}
+\citation{curse_low_div,task2vec,nlp_task2vec}
+\citation{gpt4}
+\citation{clip}
+\citation{google2023palm2}
+\citation{vaswani2017attention}
+\citation{zhang2021understanding}
+\@writefile{toc}{\contentsline {subsection}{\numberline {L.1}Future Work}{35}{subsection.L.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces \textbf  {Cross-entropy of the validation loss decreases as the diversity of the pre-training data set increases}. We report the test cross-entropy (no parenthesis) and the corresponding perplexity (in parentheses) on the validation set of C4, OpenWebText2). The diversity of the evaluation data sets, C4 and OpenWebText2 is 0.222, 0.237 respectively. The pre-train diversity of USPTO, PubMed, USPTO+PubMed is 0.158, 0.168, and 0.195 respectively. All evaluations were on the full validation set except for the ones denoted as [8B] which used a batch size of size 8 due to runs crashing due to random hardware failure when running such large evaluations. C4's validation set has 365K examples. OpenWebText2 had 33.4k examples. We explicitly avoided evaluating on the pile to minimize cofounders on our experiments, e.g., that the good performance might be due to data contamination. We also evaluated on two data sets for the same reasons and to increase robustness of our observations. Table entries are continued in Table \ref  {tab:div_vs_ce_val_cont}. }}{36}{table.3}\protected@file@percent }
+\newlabel{tab:div_vs_ce_val}{{3}{36}{\textbf {Cross-entropy of the validation loss decreases as the diversity of the pre-training data set increases}. We report the test cross-entropy (no parenthesis) and the corresponding perplexity (in parentheses) on the validation set of C4, OpenWebText2). The diversity of the evaluation data sets, C4 and OpenWebText2 is 0.222, 0.237 respectively. The pre-train diversity of USPTO, PubMed, USPTO+PubMed is 0.158, 0.168, and 0.195 respectively. All evaluations were on the full validation set except for the ones denoted as [8B] which used a batch size of size 8 due to runs crashing due to random hardware failure when running such large evaluations. C4's validation set has 365K examples. OpenWebText2 had 33.4k examples. We explicitly avoided evaluating on the pile to minimize cofounders on our experiments, e.g., that the good performance might be due to data contamination. We also evaluated on two data sets for the same reasons and to increase robustness of our observations. Table entries are continued in Table \ref {tab:div_vs_ce_val_cont}}{table.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces \textbf  {Continuation of Table \ref  {tab:div_vs_ce_val}.}}}{37}{table.4}\protected@file@percent }
+\newlabel{tab:div_vs_ce_val_cont}{{4}{37}{\textbf {Continuation of Table \ref {tab:div_vs_ce_val}.}}{table.4}{}}
+\gdef \@abspage@last{37}

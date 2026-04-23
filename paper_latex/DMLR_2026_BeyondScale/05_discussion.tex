@@ -4,7 +4,14 @@ Our work extends, examines, and thus validates the application of the Task2Vec d
 % Our conceptually well-motivated lower and upper bounds on the diversity coefficient aid in the understanding of the magnitude of the diversity coefficient.
 % Although the bounds we propose only apply to sequence data with a symbolic vocabulary, using a multi-modal embedding method (e.g. a multi-modal probe network) can easily address this limitation.
 
-One potential limitation of our method is the need for a data representation. 
+\paragraph{Limitations.}
+While our controlled experiments show a consistent positive trend between diversity and evaluation performance across 33 models (Figure~\ref{fig:div_vs_val_ce}), we acknowledge important caveats.
+First, the diversity range in our interventional experiments is narrow (0.158--0.195), as it is bounded by available training corpora in the specialized domains (patents and medical abstracts).
+Extending these experiments to larger diversity ranges with more diverse web-scale datasets would strengthen the conclusions.
+Second, the relationship between diversity and downstream benchmark accuracy (e.g., MMLU) is weaker than the diversity--cross-entropy relationship, because benchmark scores are noisier and small domain-specific models perform near random on knowledge-intensive tasks.
+We therefore present our diversity$\to$performance claim primarily through cross-entropy evaluation, with benchmark results as supporting evidence.
+
+One potential limitation of our method is the need for a data representation.
 Although the requirement for a data representation might seem restrictive, we argue that it is an inherent aspect of data processing.
 Choosing symbols (e.g., one-hot vectors), raw pixels, etc. \textbf{is} a choice of data representation.
 We suggest deep learning representations due to their overwhelming success in machine learning, e.g. in computer vision \citep{alexnet, resnet}, natural language processing \citep{bert, gpt3, chowdhery2022palm, gpt4, google2023palm2}, game playing \citep{alphago, atari1, EfficientZero}, theorem proving \citep{skiptree, gptf, pact}, code \citep{codex} and more.

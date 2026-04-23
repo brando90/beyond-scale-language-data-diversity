@@ -1,0 +1,2 @@
+dataset,div_coeff,div_coeff_ci,num_batches,batch_size,seed,elapsed_minutes,error
+fineweb,0.13267191129107445,0.0017370545508230998,600,512,42,1385.7765436172485,

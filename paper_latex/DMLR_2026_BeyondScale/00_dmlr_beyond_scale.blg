@@ -1,0 +1,69 @@
+This is BibTeX, Version 0.99d (TeX Live 2022/dev/Debian)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: 00_dmlr_beyond_scale.aux
+The style file: plainnat.bst
+Database file #1: dmlr_bib_refs.bib
+Warning--entry type for "pact" isn't style-file defined
+--line 1006 of file dmlr_bib_refs.bib
+Warning--string name "june" is undefined
+--line 1091 of file dmlr_bib_refs.bib
+Warning--empty journal in codex
+Warning--empty year in codex
+Warning--empty year in codex
+Warning--empty institution in google2023palm2
+Warning--empty year in pact
+Warning--empty institution in cka
+Warning--empty journal in alexnet
+Warning--empty journal in atari1
+Warning--empty institution in pwcca
+Warning--empty journal in gpt4
+Warning--empty journal in gptf
+Warning--empty institution in skiptree
+Warning--empty year in skiptree
+Warning--empty year in skiptree
+Warning--empty journal in gpt2
+Warning--empty journal in clip
+Warning--empty institution in svcca
+Warning--empty journal in EfficientZero
+You've used 77 entries,
+            2773 wiz_defined-function locations,
+            947 strings with 24276 characters,
+and the built_in function-call counts, 52222 in all, are:
+= -- 3991
+> -- 5534
+< -- 20
++ -- 1854
+- -- 1771
+* -- 4951
+:= -- 8510
+add.period$ -- 239
+call.type$ -- 77
+change.case$ -- 819
+chr.to.int$ -- 71
+cite$ -- 172
+duplicate$ -- 1544
+empty$ -- 2679
+format.name$ -- 1858
+if$ -- 10385
+int.to.chr$ -- 7
+int.to.str$ -- 1
+missing$ -- 46
+newline$ -- 397
+num.names$ -- 312
+pop$ -- 1751
+preamble$ -- 1
+purify$ -- 739
+quote$ -- 0
+skip$ -- 1643
+stack$ -- 0
+substring$ -- 573
+swap$ -- 195
+text.length$ -- 10
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 837
+warning$ -- 18
+while$ -- 264
+width$ -- 0
+write$ -- 953
+(There were 20 warnings)

@@ -180,4 +180,5 @@ datasets/
 
 # images for expts
 avg_*.png
-*.svg
+*.svgexperiments/04_new_datasets_div_coeff/expt_results/*.npy
+**/*.npy
