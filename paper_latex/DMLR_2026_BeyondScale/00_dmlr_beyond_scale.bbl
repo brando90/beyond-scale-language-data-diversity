@@ -1,4 +1,4 @@
-\begin{thebibliography}{77}
+\begin{thebibliography}{83}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -277,6 +277,14 @@ Tuomas Kynkäänniemi, Tero Karras, Samuli Laine, Jaakko Lehtinen, and Timo
 \newblock Improved precision and recall metric for assessing generative models,
   2019.
 
+\bibitem[Li et~al.(2024)Li, Fang, Smyrnis, Ivgi, Jordan, Gadre, Bansal, Guha,
+  Keh, Arber, et~al.]{li2024datacomp}
+Jeffrey Li, Alex Fang, Georgios Smyrnis, Maor Ivgi, Matt Jordan, Samir Gadre,
+  Hritik Bansal, Etash Guha, Sedrick Keh, George Arber, et~al.
+\newblock {DataComp-LM}: In search of the next data frontier for language
+  models.
+\newblock \emph{Advances in Neural Information Processing Systems}, 37, 2024.
+
 \bibitem[Longpre et~al.(2023)Longpre, Yauney, Reif, Lee, Roberts, Zoph, Zhou,
   Wei, Robinson, Mimno, and Ippolito]{longpre2023pretrainer}
 S~Longpre, G~Yauney, E~Reif, K~Lee, A~Roberts, B~Zoph, D~Zhou, J~Wei,
@@ -358,6 +366,22 @@ Nostalgebraist.
 OpenAI.
 \newblock Gpt-4 technical report.
 \newblock 2023.
+
+\bibitem[Penedo et~al.(2023)Penedo, Malartic, Hesslow, Cojocaru, Cappelli,
+  Alobeidli, Pannier, Almazrouei, and Launay]{penedo2023refinedweb}
+Guilherme Penedo, Quentin Malartic, Daniel Hesslow, Ruxandra Cojocaru,
+  Alessandro Cappelli, Hamza Alobeidli, Baptiste Pannier, Ebtesam Almazrouei,
+  and Julien Launay.
+\newblock The {RefinedWeb} dataset for {Falcon LLM}: outperforming curated
+  corpora with web data, and web data only.
+\newblock \emph{Advances in Neural Information Processing Systems}, 36, 2023.
+
+\bibitem[Penedo et~al.(2024)Penedo, Kydl{\'\i}{\v{c}}ek, Lozhkov, Mitchell,
+  Wolf, and Raffel]{penedo2024fineweb}
+Guilherme Penedo, Hynek Kydl{\'\i}{\v{c}}ek, Anton Lozhkov, Margaret Mitchell,
+  Thomas Wolf, and Colin Raffel.
+\newblock {FineWeb}: decanting the web for the finest text data at scale.
+\newblock \emph{arXiv preprint arXiv:2406.17557}, 2024.
 
 \bibitem[Polu and Sutskever(2020)]{gptf}
 Stanislas Polu and Ilya Sutskever.
@@ -471,6 +495,20 @@ Daria Soboleva, Faisal Al-Khateeb, Robert Myers, Jacob~R Steeves, Joel
   2023.
 \newblock URL \url{https://huggingface.co/datasets/cerebras/SlimPajama-627B}.
 
+\bibitem[Soldaini et~al.(2024)Soldaini, Kinney, Bhagia, Schwenk, Atkinson,
+  Authur, Chandu, Dumas, Li, Elazar, Groeneveld, Haber, Hadar, Hashimoto, Hou,
+  Jha, Koh, Koenigstein, Muennighoff, Soldaini, Strubell, Subramani, Tafjord,
+  Walsh, Zettlemoyer, Smith, and Hajishirzi]{soldaini2024dolma}
+Luca Soldaini, Rodney Kinney, Akshita Bhagia, Dustin Schwenk, David Atkinson,
+  Russell Authur, Khyathi Chandu, Jennifer Dumas, Lucy~Lu Li, Yanai Elazar,
+  Dirk Groeneveld, Jared Haber, Hannaneh Hadar, Iz~Hashimoto, Michal Hou,
+  Ananya Jha, Pang~Wei Koh, Noam Koenigstein, Niklas Muennighoff, Amanpreet
+  Soldaini, Emma Strubell, Nishant Subramani, Oyvind Tafjord, Pete Walsh, Luke
+  Zettlemoyer, Noah~A. Smith, and Hannaneh Hajishirzi.
+\newblock {Dolma}: an open corpus of three trillion tokens for language model
+  pretraining research.
+\newblock \emph{arXiv preprint arXiv:2402.00159}, 2024.
+
 \bibitem[Sorscher et~al.(2023)Sorscher, Geirhos, Shekhar, Ganguli, and
   Morcos]{sorscher2023neural}
 Ben Sorscher, Robert Geirhos, Shashank Shekhar, Surya Ganguli, and Ari~S.
@@ -541,6 +579,13 @@ Bram Wallace, Ziyang Wu, and Bharath Hariharan.
   Recognition (CVPR)}, pages 1245--1254, 2021.
 \newblock \doi{10.1109/CVPR46437.2021.00130}.
 
+\bibitem[Xia et~al.(2024)Xia, Malladi, Gururangan, Arora, and
+  Chen]{xia2024less}
+Mengzhou Xia, Sadhika Malladi, Suchin Gururangan, Sanjeev Arora, and Danqi
+  Chen.
+\newblock {LESS}: Selecting influential data for targeted instruction tuning.
+\newblock \emph{arXiv preprint arXiv:2402.04333}, 2024.
+
 \bibitem[Xie et~al.(2021)Xie, Raghunathan, Liang, and Ma]{ginc}
 Sang~Michael Xie, Aditi Raghunathan, Percy Liang, and Tengyu Ma.
 \newblock An explanation of in-context learning as implicit bayesian inference.
@@ -593,5 +638,13 @@ Chiyuan Zhang, Samy Bengio, Moritz Hardt, Benjamin Recht, and Oriol Vinyals.
 \newblock \emph{Communications of the ACM}, 64\penalty0 (3):\penalty0 107--115,
   2021.
 \newblock URL \url{https://doi.org/10.1145/3446776}.
+
+\bibitem[Zhou et~al.(2023)Zhou, Liu, Xu, Iyer, Sun, Mao, Ma, Efrat, Yu, Yu,
+  Zhang, Ghosh, Lewis, Zettlemoyer, and Levy]{zhou2023lima}
+Chunting Zhou, Pengfei Liu, Puxin Xu, Srini Iyer, Jiao Sun, Yuning Mao, Xuezhe
+  Ma, Avia Efrat, Ping Yu, Lili Yu, Susan Zhang, Gargi Ghosh, Mike Lewis, Luke
+  Zettlemoyer, and Omer Levy.
+\newblock {LIMA}: Less is more for alignment.
+\newblock \emph{Advances in Neural Information Processing Systems}, 36, 2023.
 
 \end{thebibliography}

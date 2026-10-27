@@ -1,4 +1,4 @@
-This is BibTeX, Version 0.99d (TeX Live 2022/dev/Debian)
+This is BibTeX, Version 0.99d (TeX Live 2024)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: 00_dmlr_beyond_scale.aux
 The style file: plainnat.bst
@@ -25,45 +25,45 @@ Warning--empty journal in gpt2
 Warning--empty journal in clip
 Warning--empty institution in svcca
 Warning--empty journal in EfficientZero
-You've used 77 entries,
+You've used 83 entries,
             2773 wiz_defined-function locations,
-            947 strings with 24276 characters,
-and the built_in function-call counts, 52222 in all, are:
-= -- 3991
-> -- 5534
+            970 strings with 26239 characters,
+and the built_in function-call counts, 57452 in all, are:
+= -- 4362
+> -- 6208
 < -- 20
-+ -- 1854
-- -- 1771
-* -- 4951
-:= -- 8510
-add.period$ -- 239
-call.type$ -- 77
-change.case$ -- 819
-chr.to.int$ -- 71
-cite$ -- 172
-duplicate$ -- 1544
-empty$ -- 2679
-format.name$ -- 1858
-if$ -- 10385
++ -- 2079
+- -- 1990
+* -- 5486
+:= -- 9410
+add.period$ -- 257
+call.type$ -- 83
+change.case$ -- 909
+chr.to.int$ -- 77
+cite$ -- 184
+duplicate$ -- 1664
+empty$ -- 2865
+format.name$ -- 2083
+if$ -- 11385
 int.to.chr$ -- 7
 int.to.str$ -- 1
-missing$ -- 46
-newline$ -- 397
-num.names$ -- 312
-pop$ -- 1751
+missing$ -- 52
+newline$ -- 427
+num.names$ -- 336
+pop$ -- 1925
 preamble$ -- 1
-purify$ -- 739
+purify$ -- 823
 quote$ -- 0
-skip$ -- 1643
+skip$ -- 1791
 stack$ -- 0
-substring$ -- 573
-swap$ -- 195
+substring$ -- 585
+swap$ -- 201
 text.length$ -- 10
 text.prefix$ -- 0
 top$ -- 0
-type$ -- 837
+type$ -- 903
 warning$ -- 18
-while$ -- 264
+while$ -- 282
 width$ -- 0
-write$ -- 953
+write$ -- 1028
 (There were 20 warnings)
